@@ -1,7 +1,6 @@
 using RecurrentNN
 reload("RecurrentNN.jl")
-
-# global settings
+# # global settings
 const generator = "lstm" # can be 'rnn' or 'lstm'
 const hiddensizes = [20,20] # list of sizes of hidden layers
 const lettersize = 5 # size of letter embeddings
@@ -30,31 +29,36 @@ function initVocab(inpath::String)
     return sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize
 end
 
-function initModel()
-end
+# function initModel()
+# end
 
-function reinit()
-end
+# function reinit()
+# end
 
-sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
-    initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
+# sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
+#     initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
 
+# nn = RecurrentNN.RNNLayer(20,10,.008)
+# nn = RecurrentNN.RNN(120,[10,10,10],30)
+# out = RecurrentNN.relu(grph,nnmat)
 
-nn = RecurrentNN.RNNLayer(20,10,.008)
-nn = RecurrentNN.RNN(120,[10,10,10],30)
+# out.w
+# out.dw
+# dw_before = copy(nnmat.dw)
+# randn!(out.dw)
+# grph.backprop[1]()
 
+# nnmat.dw
+# dw_before
 grph = RecurrentNN.Graph()
 nnmat = RecurrentNN.randNNMat(2,3,.008)
-out = RecurrentNN.tanh(grph,nnmat)
-out.w
-out.dw
-nnmat.dw
+nnmat2 = RecurrentNN.randNNMat(3,2,.008)
+
+out = RecurrentNN.mul(grph,nnmat, nnmat2)
 randn!(out.dw)
-grph.backprop[1]()
 out
 
+nnmat
+grph.backprop[1]()
 
-nnmat.dw
-
-
-
+nnmat
