@@ -4,12 +4,17 @@ type Graph
 end
 
 function rowpluck(g::Graph, m::NNMatrix, ix::Int64)
+    # pluck a row of m and return it as a column vector
     out = NNMatrix(m.d, 1)
-
-#     out.w = m[ix,:]
-    # to do
+    out.w[:,1] = m.w[ix,:]'
+    # backprop function
+    push!(g.backprop,
+          function ()
+             m.dw[ix,:] += out.dw[:,1]' #
+          end )
     return out
 end
+
 
 function tanh(g::Graph, m::NNMatrix)
     out = NNMatrix(m.n, m.d)

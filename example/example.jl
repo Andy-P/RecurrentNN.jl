@@ -1,14 +1,19 @@
 using RecurrentNN
 reload("RecurrentNN.jl")
 # # global settings
-const generator = "lstm" # can be 'rnn' or 'lstm'
+const generator = "rnn" # can be 'rnn' or 'lstm'
 const hiddensizes = [20,20] # list of sizes of hidden layers
 const lettersize = 5 # size of letter embeddings
 
 # optimization
 regc = 0.000001 # L2 regularization strength
 learning_rate = 0.01 # learning rate
-clipval = 5.0 # clip gradients at this value
+clipval = 5.20 # clip gradients at this value
+
+type TextModel
+    wil::RecurrentNN.NNMatrix  # character input to char-index layer
+    model::RecurrentNN.Model
+end
 
 function initVocab(inpath::String)
 
@@ -29,18 +34,26 @@ function initVocab(inpath::String)
     return sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize
 end
 
-# function initModel()
-# end
+function initModel(lettersize::Int, hiddensizes::Array{Int,1},outputsize::Int)
+    wil = RecurrentNN.randNNMat(inputsize,lettersize,.008)
+    rnn = RecurrentNN.RNN(lettersize,hiddensizes,outputsize)
+    println((typeof(wil),typeof(rnn)))
+    m = TextModel(wil,rnn)
+    return m
+end
 
 # function reinit()
 # end
 
-# sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
-#     initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
+sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
+    initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
 
-# nn = RecurrentNN.RNNLayer(20,10,.008)
+model = initModel(lettersize, hiddensizes, outputsize)
+
+# grph = RecurrentNN.Graph()
 # nn = RecurrentNN.RNN(120,[10,10,10],30)
-# out = RecurrentNN.relu(grph,nnmat)
+# nnmat = RecurrentNN.randNNMat(3,5,.008)
+# out = RecurrentNN.rowpluck(grph,nnmat,3)
 
 # out.w
 # out.dw
@@ -50,15 +63,3 @@ end
 
 # nnmat.dw
 # dw_before
-grph = RecurrentNN.Graph()
-nnmat = RecurrentNN.randNNMat(2,3,.008)
-nnmat2 = RecurrentNN.randNNMat(3,2,.008)
-
-out = RecurrentNN.mul(grph,nnmat, nnmat2)
-randn!(out.dw)
-out
-
-nnmat
-grph.backprop[1]()
-
-nnmat
