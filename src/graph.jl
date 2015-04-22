@@ -15,7 +15,6 @@ function rowpluck(g::Graph, m::NNMatrix, ix::Int64)
     return out
 end
 
-
 function tanh(g::Graph, m::NNMatrix)
     out = NNMatrix(m.n, m.d)
     out.w = tanh(m.w)
@@ -82,9 +81,9 @@ function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
     # backprop function
     push!(g.backprop,
         function ()
-            for i = 1:m1.n
-                for j = 1:m2.d
-                    for k = 1:m1.d
+            for i = 1:m1.n # m1's num row
+                for j = 1:m2.d # m2's num row
+                    for k = 1:m1.d # m1's num col
                           b = out.dw[i,j]
                           m1.dw[i,k] += m2.w[k,j] * b
                           m2.dw[k,j] += m1.w[i,k] * b
@@ -94,3 +93,16 @@ function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
           end )
     return out
 end
+
+function eltmul(g::Graph, m1::NNMatrix, m2::NNMatrix) # element-wise multiplication
+    out = NNMatrix(m1.n, m2.d)
+    out.w = m1.w .* m2.w
+    # backprop function
+    push!(g.backprop,
+        function ()
+            m1.dw .+= m2.w .* out.dw
+            m2.dw .+= m1.w .* out.dw
+          end )
+    return out
+end
+

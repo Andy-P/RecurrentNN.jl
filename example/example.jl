@@ -42,24 +42,25 @@ function initModel(lettersize::Int, hiddensizes::Array{Int,1},outputsize::Int)
     return m
 end
 
-# function reinit()
-# end
-
 sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
     initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
 
 model = initModel(lettersize, hiddensizes, outputsize)
 
-# grph = RecurrentNN.Graph()
 # nn = RecurrentNN.RNN(120,[10,10,10],30)
-# nnmat = RecurrentNN.randNNMat(3,5,.008)
-# out = RecurrentNN.rowpluck(grph,nnmat,3)
+grph = RecurrentNN.Graph()
+nnmat = RecurrentNN.randNNMat(2,3,.008)
+nnmat3 = RecurrentNN.randNNMat(2,3,.008)
+out = RecurrentNN.eltmul(grph,nnmat,nnmat3)
+out.w
+out.dw
+rand!(out.dw)
+grph.backprop[1]()
 
-# out.w
-# out.dw
-# dw_before = copy(nnmat.dw)
-# randn!(out.dw)
-# grph.backprop[1]()
+nnmat.dw
+nnmat3.dw
 
-# nnmat.dw
-# dw_before
+
+
+
+
