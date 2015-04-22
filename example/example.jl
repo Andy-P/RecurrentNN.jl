@@ -1,27 +1,19 @@
 using RecurrentNN
 reload("RecurrentNN.jl")
+
 # # global settings
 const generator = "rnn" # can be 'rnn' or 'lstm'
 const hiddensizes = [20,20] # list of sizes of hidden layers
 const lettersize = 5 # size of letter embeddings
-1e-8
-# optimization
-regc = 0.000001 # L2 regularization strength
-learning_rate = 0.01 # learning rate
-clipval = 5.20 # clip gradients at this value
 
+# optimization
+const regc = 0.000001 # L2 regularization strength
+const learning_rate = 0.01 # learning rate
+const clipval = 5.20 # clip gradients at this value
 
 type TextModel
     wil::RecurrentNN.NNMatrix  # character input to char-index layer
-    solver::RecurrentNN.Solver
     model::RecurrentNN.Model
-    sents::Array{String,1}
-    vocab::Array{Char,1}
-    letterToIndex::Dict{Char,Int}
-    indexToLetter::Dict{Int,Char}
-    inputsize::Int
-    outputsize::Int
-    epochsize::Int
 end
 
 function initVocab(inpath::String)
@@ -43,58 +35,47 @@ function initVocab(inpath::String)
     return sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize
 end
 
-function initModel(lettersize::Int, hiddensizes::Array{Int,1},outputsize::Int)
+function initModel(inputsize::Int, lettersize::Int, hiddensizes::Array{Int,1},outputsize::Int)
     wil = RecurrentNN.randNNMat(inputsize,lettersize,.008)
-    rnn = RecurrentNN.RNN(lettersize,hiddensizes,outputsize)
-    println((typeof(wil),typeof(rnn)))
-    m = TextModel(wil,rnn)
-    return m
+    nn = RecurrentNN.RNN(lettersize,hiddensizes,outputsize)
+    println((typeof(wil),typeof(nn)))
+    return TextModel(wil,nn)
 end
 
-<<<<<<< Updated upstream
+#########################################
+#          initialize the model         #
+#########################################
+
+solver = RecurrentNN.Solver() # RMSProp optimizer
+
+# init the text source
 sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
     initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
-=======
-function init(lettersize::Int, hiddensizes::Array{Int,1})
-    solver = RecurrentNN.Solver()
-    sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize = initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
-    model = initModel(hiddensizes)
-    TextModel(solver model, sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize)
+
+# init the rnn/lstm
+model = initModel(inputsize, lettersize, hiddensizes, outputsize)
+
+
+#########################################
+#             run the model             #
+#########################################
+
+function forwardIndex()
+
 end
-reinit(regc,learning_rate,clipval)
 
-solver = RecurrentNN.Solver()
-# function reinit()
-# end
-
->>>>>>> Stashed changes
-
-model = initModel(lettersize, hiddensizes, outputsize)
-
-# nn = RecurrentNN.RNN(120,[10,10,10],30)
-grph = RecurrentNN.Graph()
-nnmat = RecurrentNN.randNNMat(2,3,.008)
-nnmat3 = RecurrentNN.randNNMat(2,3,.008)
-out = RecurrentNN.eltmul(grph,nnmat,nnmat3)
-out.w
-out.dw
-rand!(out.dw)
-grph.backprop[1]()
-
-nnmat.dw
-nnmat3.dw
+function predictsentence(model::Model, sent::String)
 
 
+end
 
 
-
-<<<<<<< Updated upstream
-=======
-# nnmat.dw
-# dw_before
+function costfunc(model::Model, sent::String)
 
 
-sum(out.w)
-out.w
+end
 
->>>>>>> Stashed changes
+function costfunc(model::Model, sent::String)
+
+
+end
