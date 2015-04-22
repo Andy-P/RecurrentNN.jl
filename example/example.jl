@@ -4,15 +4,24 @@ reload("RecurrentNN.jl")
 const generator = "rnn" # can be 'rnn' or 'lstm'
 const hiddensizes = [20,20] # list of sizes of hidden layers
 const lettersize = 5 # size of letter embeddings
-
+1e-8
 # optimization
 regc = 0.000001 # L2 regularization strength
 learning_rate = 0.01 # learning rate
 clipval = 5.20 # clip gradients at this value
 
+
 type TextModel
     wil::RecurrentNN.NNMatrix  # character input to char-index layer
+    solver::RecurrentNN.Solver
     model::RecurrentNN.Model
+    sents::Array{String,1}
+    vocab::Array{Char,1}
+    letterToIndex::Dict{Char,Int}
+    indexToLetter::Dict{Int,Char}
+    inputsize::Int
+    outputsize::Int
+    epochsize::Int
 end
 
 function initVocab(inpath::String)
@@ -42,8 +51,23 @@ function initModel(lettersize::Int, hiddensizes::Array{Int,1},outputsize::Int)
     return m
 end
 
+<<<<<<< Updated upstream
 sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
     initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
+=======
+function init(lettersize::Int, hiddensizes::Array{Int,1})
+    solver = RecurrentNN.Solver()
+    sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize = initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
+    model = initModel(hiddensizes)
+    TextModel(solver model, sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize)
+end
+reinit(regc,learning_rate,clipval)
+
+solver = RecurrentNN.Solver()
+# function reinit()
+# end
+
+>>>>>>> Stashed changes
 
 model = initModel(lettersize, hiddensizes, outputsize)
 
@@ -64,3 +88,13 @@ nnmat3.dw
 
 
 
+<<<<<<< Updated upstream
+=======
+# nnmat.dw
+# dw_before
+
+
+sum(out.w)
+out.w
+
+>>>>>>> Stashed changes
