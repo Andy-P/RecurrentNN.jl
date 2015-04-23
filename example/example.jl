@@ -72,10 +72,50 @@ end
 
 function costfunc(model::Model, sent::String)
 
+    # takes a model and a sentence and
+    # calculates the loss. Also returns the Graph
+    # object which can be used to do backprop
+
+    n = length(sent)
+    g = Graph()
+    log2ppl = 0.0
+    cost = 0.0
+    prevhd = Array(NNMatrix,0) # final hidden layer of the recurrent model after each forward step
+    prevout = NNMatrix(outputsize,1) # output of the recurrent model after each forward step
+    for i= 0:length(sent)
+        c = i == 0? 0 : sent[i]
+        println((i,c))
+
+    # start and end tokens are zeros
+    ix_source = i == 0 ? 0 : letterToIndex[sent[i]] # first step: start with START token
+    ix_target = i == n ? 0 : letterToIndex[sent[i+1]] # last step: end with END token
+
+    lh = forwardIndex(g, model, ix_source, prev);
+    prevhd, prevout = lh
+
+    # set gradients into logprobabilities
+    logprobs = lh.o # interpret output as logprobs
+    probs = R.softmax(logprobs) # compute the softmax probabilities
+
+    log2ppl += -Math.log2(probs.w[ix_target]); // accumulate base 2 log prob and do smoothing
+    cost += -Math.log(probs.w[ix_target]);
+
+    # write gradients into log probabilities
+    logprobs.dw = probs.w;
+    logprobs.dw[ix_target] -= 1
+    }
+    var ppl = Math.pow(2, log2ppl / (n - 1));
+    return {'G':G, 'ppl':ppl, 'cost':cost};
 
 end
 
 function costfunc(model::Model, sent::String)
 
 
+end
+
+sent = sents[20]
+for i= 0:length(sent)
+    c = i == 0? 0 : sent[i]
+    println((i,c))
 end
