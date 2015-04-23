@@ -14,6 +14,7 @@ type RNN <: Model
     hdlayers::Array{RNNLayer,1} # holds variable number of hidden layers
     whd::NNMatrix # hidden to decoder weights & gradients
     bd::NNMatrix  # bias of hidden to decoder layer
+    hiddensizes::{Int,1}
     function RNN(inputsize::Int, hiddensizes::Array{Int,1}, outputsize::Int, std::FloatingPoint=0.08)
         hdlayers = Array(RNNLayer, length(hiddensizes))
         for d in 1:length(hiddensizes)
@@ -23,11 +24,11 @@ type RNN <: Model
         end
         whd = randNNMat(outputsize, hiddensizes[end], std)
         bd = NNMatrix(outputsize, 1, zeros(outputsize), zeros(outputsize))
-        new(hdlayers, whd, bd)
+        new(hdlayers, whd, bd, hiddensizes)
     end
 end
 
-function forwardprop(g::Graph, model::RNN, hiddensizes::Array{Int,1}, x, prev)
+function forwardprop(g::Graph, model::RNN, x, prevhd, prevout)
 
     # forward prop for a single tick of RNN
     # G is graph to append ops to
@@ -37,30 +38,33 @@ function forwardprop(g::Graph, model::RNN, hiddensizes::Array{Int,1}, x, prev)
 
     hiddenprevs = Array(NNMatrix,0)
     if size(prevs,1) == 0
-        for d = 1:size(hiddensizes,1)
-            push!(hiddenprevs, NNMatrix(hiddensize[d],1))
+        for hdsize in model.hiddensizes
+            push!(hiddenprevs, NNMatrix(hdsize,1))
         end
     else
-      hidden_prevs = prev.h
+      hiddenprevs = prevhd
     end
 
-#     var hidden = [];
-#     for(var d=0;d<hidden_sizes.length;d++) {
+    hidden = Array(NNMatrix,0)
+    for d in 0:length(hiddensizes) # for each hidden layer
 
-#       var input_vector = d === 0 ? x : hidden[d-1];
-#       var hidden_prev = hidden_prevs[d];
+        input = d == 0 ? x : hidden[d]
+        hdprev = hiddenprevs[d]
+        wxh = model.hdlayers[d].wxh
+        whh = model.hdlayers[d].whh
+        bhh = model.hdlayers[d].bhh
 
-#       var h0 = G.mul(model['Wxh'+d], input_vector);
-#       var h1 = G.mul(model['Whh'+d], hidden_prev);
-#       var hidden_d = G.relu(G.add(G.add(h0, h1), model['bhh'+d]));
+        h0 = mul(g, wxh, input)
+        h1 = mul(g, whh, hdprev)
+        hidden_d = relu(add(g, add(g, h0, h1), bhh))
 
-#       hidden.push(hidden_d);
-#     }
+        push!(hidden,hidden_d)
+    end
 
-#     // one decoder to outputs at end
-#     var output = G.add(G.mul(model['Whd'], hidden[hidden.length - 1]),model['bd']);
+    # one decoder to outputs at end
+    output = add(g, mul(g, model.whd, hidden[end]),model.bd)
 
-#     // return cell memory, hidden representation and output
-#     return {'h':hidden, 'o' : output};
+    # return cell memory, hidden representation and output
+    return hidden, output
 end
 
