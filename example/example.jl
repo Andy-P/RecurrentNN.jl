@@ -52,7 +52,7 @@ wil, model = initModel(inputsize, lettersize, hiddensizes, outputsize)
 tickiter = 0
 
 pplcurve = Array(FloatingPoint,0) # track perplexity
-pplgraph = Dict{Int,FloatingPoint} # track perplexity
+pplgraph = Dict{Int,FloatingPoint}() # track perplexity
 
 #########################################
 #             run the model             #
@@ -139,31 +139,36 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     end
 
     if tickiter % 10 == 0
-#     // draw argmax prediction
-#     $('#argmax').html('');
-#     var pred = predictSentence(model, false);
-#     var pred_div = '<div class="apred">'+pred+'</div>'
-#     $('#argmax').append(pred_div);
+    #     // draw argmax prediction
+    #     $('#argmax').html('');
+    #     var pred = predictSentence(model, false);
+    #     var pred_div = '<div class="apred">'+pred+'</div>'
+    #     $('#argmax').append(pred_div);
 
-    # keep track of perplexity
-#     $('#epoch').text('epoch: ' + (tick_iter/epoch_size).toFixed(2));
-#     $('#ppl').text('perplexity: ' + cost_struct.ppl.toFixed(2));
-#     $('#ticktime').text('forw/bwd time per example: ' + tick_time.toFixed(1) + 'ms');
-
+        # keep track of perplexity
+    #     $('#epoch').text('epoch: ' + (tick_iter/epoch_size).toFixed(2));
+    #     $('#ppl').text('perplexity: ' + cost_struct.ppl.toFixed(2));
+    #     $('#ticktime').text('forw/bwd time per example: ' + tick_time.toFixed(1) + 'ms');
         if tickiter % 100 == 0
             pplmedian = median(pplcurve)
-            println((typeof(tickiter),typeof(pplmedian)))
             pplgraph[tickiter] = pplmedian
             pplcurve = Array(FloatingPoint,0)
         end
     end
-
     return model, wil, solver, tickiter
 end
 
+
 tic()
-interations =  1000
+interations =  10000
 for i = 1:interations
     model, wil, solver, tickiter  = tick(model, wil, sents, solver, tickiter, pplcurve)
 end
 toc()
+
+iter = sort(collect(keys(pplgraph)))
+plotdata = zeros(length(pplgraph),2)
+for i = 1:length(pplgraph)
+    println((float(i), float(pplgraph[iter[i]])))
+end
+
