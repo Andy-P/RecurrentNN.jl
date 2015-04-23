@@ -8,7 +8,7 @@ include("rnn.jl")
 include("lstm.jl")
 
 
-export NNMatrix
+# export NNMatrix
 # package code goes here
 
 end # module

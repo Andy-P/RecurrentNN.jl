@@ -3,7 +3,7 @@ type Graph
    Graph() = new(Array(Function,0))
 end
 
-function rowpluck(g::Graph, m::NNMatrix, ix::Int64)
+function rowpluck(g::Graph, m::NNMatrix, ix::Int)
     # pluck a row of m and return it as a column vector
     out = NNMatrix(m.d, 1)
     out.w[:,1] = m.w[ix,:]'
@@ -66,7 +66,7 @@ end
 
 function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
     out = NNMatrix(m1.n, m2.d)
-    println((m1.n, m2.d))
+#     println((m1.n, m2.d))
     n = m1.n
     d = m2.d
     for i = 1:n
@@ -78,6 +78,7 @@ function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
             out.w[i,j] = dot
         end
     end
+
     # backprop function
     push!(g.backprop,
         function ()
@@ -91,6 +92,17 @@ function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
                   end
               end
           end )
+    return out
+end
+
+function add(g::Graph, m1::NNMatrix, m2::NNMatrix)
+    out = NNMatrix(m1.n, m1.d)
+    out.w = m1.w .+ m2.w
+    push!(g.backprop,
+        function ()
+              m1.dw .+= out.dw
+              m2.dw .+= out.dw
+        end )
     return out
 end
 
