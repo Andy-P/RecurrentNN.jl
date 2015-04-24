@@ -12,7 +12,7 @@ function step(solver::Solver, model::Model, stepsize::FloatingPoint, regc::Float
     numclipped = 0
     numtot = 0
 
-    # New function not in orginal
+    # New function not in orginal recurrentjs. Needed to gather all matrices into on collection
     modelMatices = collectNNMat(model)
 
     # init stepcache if needed
@@ -30,7 +30,7 @@ function step(solver::Solver, model::Model, stepsize::FloatingPoint, regc::Float
 
                 # rmsprop adaptive learning rate
                 mdwi = m.dw[i,j]
-                s.w[i,j] = s.w[i,j] * solver.decayrate + (1.0 - solver.decayrate) * mdwi^2;
+                s.w[i,j] = s.w[i,j] * solver.decayrate + (1.0 - solver.decayrate) * mdwi * mdwi;
 
                 # gradient clip
                 if mdwi > clipval
@@ -46,7 +46,7 @@ function step(solver::Solver, model::Model, stepsize::FloatingPoint, regc::Float
 
                 # update (and regularize)
                 m.w[i,j] += - stepsize * mdwi / sqrt(s.w[i,j] + solver.smootheps) - regc * m.w[i,j]
-                m.dw[i,j] = 0 # reset gradients for next iteration
+                m.dw[i,j] = 0. # reset gradients for next iteration
             end
         end
     end

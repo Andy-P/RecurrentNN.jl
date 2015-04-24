@@ -7,7 +7,7 @@ const lettersize = 5 # size of letter embeddings
 
 # optimization
 const regc = 0.000001 # L2 regularization strength
-const learning_rate = 0.0009 # learning rate
+const learning_rate = 0.0008 # learning rate for rnn
 const clipval = 5.0 # clip gradients at this value
 
 function initVocab(inpath::String)
@@ -15,7 +15,7 @@ function initVocab(inpath::String)
     f = open(inpath,"r")
     str = readall(inpath)
     vocab = sort(setdiff(unique(str),['\r','\n'])) # unique characters in data
-    sents = [string(l[1:end-1]) for l in readlines(f)] #split(str,"\r\n") # array of sentences
+    sents = [string(l[1:end-2]) for l in readlines(f)] #split(str,"\r\n") # array of sentences
     inputsize = length(vocab) + 1 # 1 additional token (zero) in used for beginning and end tokens
     outputsize = length(vocab) + 1
     epochsize = length(sents) # nmber of sentence in sample
@@ -102,7 +102,7 @@ function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::Str
         logprobs.dw = probs.w;
         logprobs.dw[ix_target+1] -= 1
     end
-    ppl = (log2ppl / (n))^2
+    ppl = (log2ppl/(n-1))^2
     return g, ppl, cost
 end
 
@@ -160,7 +160,7 @@ end
 
 
 tic()
-interations =  500
+interations = 500
 for i = 1:interations
     model, wil, solver, tickiter, pplcurve  = tick(model, wil, sents, solver, tickiter, pplcurve)
 end
@@ -172,4 +172,3 @@ for i = 1:length(pplgraph)
     println((float(i), float(pplgraph[iter[i]])))
 end
 
-ß

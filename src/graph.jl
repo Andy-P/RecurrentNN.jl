@@ -10,7 +10,7 @@ function rowpluck(g::Graph, m::NNMatrix, ix::Int)
     # backprop function
     push!(g.backprop,
           function ()
-             m.dw[ix,:] += out.dw[:,1]' #
+             m.dw[ix,:] += out.dw[:,1]'
           end )
     return out
 end
