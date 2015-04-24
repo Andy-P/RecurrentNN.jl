@@ -23,14 +23,14 @@ function step(solver::Solver, model::Model, stepsize::FloatingPoint, regc::Float
     end
 
       for k = 1:length(modelMatices)
-          m = modelMatices[k] # mat ref
-          s = solver.stepcache[k]
+          @inbounds m = modelMatices[k] # mat ref
+          @inbounds s = solver.stepcache[k]
           for i = 1:m.n
             for j = 1:m.d
 
                 # rmsprop adaptive learning rate
-                mdwi = m.dw[i,j]
-                s.w[i,j] = s.w[i,j] * solver.decayrate + (1.0 - solver.decayrate) * mdwi * mdwi;
+                @inbounds mdwi = m.dw[i,j]
+                @inbounds s.w[i,j] = s.w[i,j] * solver.decayrate + (1.0 - solver.decayrate) * mdwi * mdwi;
 
                 # gradient clip
                 if mdwi > clipval
@@ -45,8 +45,8 @@ function step(solver::Solver, model::Model, stepsize::FloatingPoint, regc::Float
                 numtot += 1
 
                 # update (and regularize)
-                m.w[i,j] += - stepsize * mdwi / sqrt(s.w[i,j] + solver.smootheps) - regc * m.w[i,j]
-                m.dw[i,j] = 0. # reset gradients for next iteration
+                @inbounds m.w[i,j] += - stepsize * mdwi / sqrt(s.w[i,j] + solver.smootheps) - regc * m.w[i,j]
+                @inbounds m.dw[i,j] = 0. # reset gradients for next iteration
             end
         end
     end

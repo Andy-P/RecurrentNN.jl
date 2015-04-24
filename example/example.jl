@@ -8,17 +8,17 @@ const lettersize = 5 # size of letter embeddings
 
 # optimization
 const regc = 0.000001 # L2 regularization strength
-const learning_rate = 0.001 # learning rate for rnn
-const clipval = 5.0 # clip gradients at this value
+const learning_rate = 0.01 # learning rate for rnn
+const clipval = 2.0 # clip gradients at this value
 
 function initVocab(inpath::String)
 
     f = open(inpath,"r")
-    sents = [string(l[1:end-2]) for l in readlines(f)] #split(str,"\r\n") # array of sentences
+    sents = [string(l[1:end-1]) for l in readlines(f)] # split(str,"\r\n") # array of sentences
     str = ""
     for s in sents str = "$str $(s[1:end-1])" end
     vocab = sort(setdiff(unique(str),['\r','\n'])) # unique characters in data
-#     sents = [string(l[1:end-2]) for l in readlines(f)] #split(str,"\r\n") # array of sentences
+    # sents = [string(l[1:end-2]) for l in readlines(f)] #split(str,"\r\n") # array of sentences
     inputsize = length(vocab) + 1 # 1 additional token (zero) in used for beginning and end tokens
     outputsize = length(vocab) + 1
     epochsize = length(sents) # nmber of sentence in sample
@@ -36,7 +36,7 @@ function initModel(inputsize::Int, lettersize::Int, hiddensizes::Array{Int,1},ou
     wil = RecurrentNN.randNNMat(inputsize,lettersize,.008)
     nn = generator == "rnn"? RecurrentNN.RNN(lettersize,hiddensizes,outputsize):
             RecurrentNN.LSTM(lettersize,hiddensizes,outputsize)
-#     println((typeof(wil),typeof(nn)))
+    # println((typeof(wil),typeof(nn)))
     return wil, nn
 end
 
@@ -49,6 +49,8 @@ solver = RecurrentNN.Solver() # RMSProp optimizer
 # init the text source
 sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
     initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
+
+sents[21]
 
 # init the rnn/lstm
 wil, model = initModel(inputsize, lettersize, hiddensizes, outputsize)
@@ -82,7 +84,6 @@ function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::Str
     prev = (prevhd, prevcell, prevout)
     for i= 0:length(sent)
 
-#         println((i,n))
         # start and end tokens are zeros
         ix_source = i == 0 ? 0 : letterToIndex[sent[i]] # first step: start with START token
         ix_target = i == n ? 0 : letterToIndex[sent[i+1]] # last step: end with END token
@@ -96,7 +97,6 @@ function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::Str
         logprobs =  prev[end] # interpret output (last position in tuple) as logprobs
         probs = RecurrentNN.softmax(logprobs) # compute the softmax probabilities
 
-#         println((2, i,ix_source,ix_target))
         log2ppl += -log2(probs.w[ix_target+1]) # accumulate base 2 log prob and do smoothing
         cost += -log(probs.w[ix_target+1])
 
@@ -111,10 +111,8 @@ end
 function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array, solver::RecurrentNN.Solver, tickiter::Int, pplcurve::Array{FloatingPoint,1})
 
     # sample sentence fromd data
-#     sent = sents[rand(1:length(sents))]
-    sent = sents[rand(21:21)]
-#     sent = sents[22]
-#     println((i,sent))
+    sent = sents[rand(1:21)]
+    # sent = sents[rand(1:length(sents))]
 
     t1 = time_ns() # log start timestamp
 
@@ -148,10 +146,6 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     #     var pred_div = '<div class="apred">'+pred+'</div>'
     #     $('#argmax').append(pred_div);
 
-        # keep track of perplexity
-    #     $('#epoch').text('epoch: ' + (tick_iter/epoch_size).toFixed(2));
-    #     $('#ppl').text('perplexity: ' + cost_struct.ppl.toFixed(2));
-    #     $('#ticktime').text('forw/bwd time per example: ' + tick_time.toFixed(1) + 'ms');
         if tickiter % 50 == 0
             pplmedian = median(pplcurve)
             println("Perplexity = $(round(pplmedian,4)) @ $tickiter")
@@ -162,17 +156,16 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     return model, wil, solver, tickiter, pplcurve
 end
 
-
 tic()
-interations = 60
+interations = 600
 for i = 1:interations
     model, wil, solver, tickiter, pplcurve  = tick(model, wil, sents, solver, tickiter, pplcurve)
 end
 toc()
 
-# iter = sort(collect(keys(pplgraph)))
-# plotdata = zeros(length(pplgraph),2)
-# for i = 1:length(pplgraph)
-#     println((float(i), round(pplgraph[iter[i]],3)))
-# end
+iter = sort(collect(keys(pplgraph)))
+plotdata = zeros(length(pplgraph),2)
+for i = 1:length(pplgraph)
+    println((float(i), float(pplgraph[iter[i]])))
+end
 

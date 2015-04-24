@@ -10,7 +10,7 @@ function rowpluck(g::Graph, m::NNMatrix, ix::Int)
     # backprop function
     push!(g.backprop,
           function ()
-             m.dw[ix,:] += out.dw[:,1]'
+             @inbounds m.dw[ix,:] += out.dw[:,1]'
           end )
     return out
 end
@@ -23,7 +23,7 @@ function tanh(g::Graph, m::NNMatrix)
           function ()
               for i = 1:m.n
                   for j = 1:m.d
-                      m.dw[i,j] += (1. - out.w[i,j]^2) * out.dw[i,j]
+                      @inbounds m.dw[i,j] += (1. - out.w[i,j]^2) * out.dw[i,j]
                   end
               end
           end )
@@ -38,7 +38,7 @@ function sigmoid(g::Graph, m::NNMatrix)
           function ()
               for i = 1:m.n
                   for j = 1:m.d
-                      m.dw[i,j] +=  out.w[i,j] * (1. - out.w[i,j]) *  out.dw[i,j]
+                      @inbounds m.dw[i,j] +=  out.w[i,j] * (1. - out.w[i,j]) *  out.dw[i,j]
                   end
               end
           end )
@@ -49,7 +49,7 @@ function relu(g::Graph, m::NNMatrix)
     out = NNMatrix(m.n, m.d)
     for i = 1:m.n
       for j = 1:m.d
-          out.w[i,j] = m.w[i,j] < 0. ? 0. :  m.w[i,j]
+          @inbounds out.w[i,j] = m.w[i,j] < 0. ? 0. :  m.w[i,j]
       end
     end
     # backprop function
@@ -57,7 +57,7 @@ function relu(g::Graph, m::NNMatrix)
       function ()
           for i = 1:m.n
               for j = 1:m.d
-                  m.dw[i,j] +=  m.w[i,j] < 0. ? 0 : out.dw[i,j]
+                  @inbounds m.dw[i,j] +=  m.w[i,j] < 0. ? 0 : out.dw[i,j]
               end
           end
       end )
@@ -73,9 +73,9 @@ function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
         for j = 1:d
             dot = 0.
             for k = 1:m1.d
-                dot += m1.w[i,k] * m2.w[k,j]
+                @inbounds dot += m1.w[i,k] * m2.w[k,j]
             end
-            out.w[i,j] = dot
+            @inbounds out.w[i,j] = dot
         end
     end
 
@@ -85,9 +85,9 @@ function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
             for i = 1:m1.n # m1's num row
                 for j = 1:m2.d # m2's num row
                     for k = 1:m1.d # m1's num col
-                          b = out.dw[i,j]
-                          m1.dw[i,k] += m2.w[k,j] * b
-                          m2.dw[k,j] += m1.w[i,k] * b
+                          @inbounds b = out.dw[i,j]
+                          @inbounds m1.dw[i,k] += m2.w[k,j] * b
+                          @inbounds m2.dw[k,j] += m1.w[i,k] * b
                       end
                   end
               end

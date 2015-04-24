@@ -1,3 +1,37 @@
-# RecurrentNN
+[
+# RecurrentNN.jl
 
-[![Build Status](https://travis-ci.org/Andre-P/RecurrentNN.jl.svg?branch=master)](https://travis-ci.org/Andre-P/RecurrentNN.jl)
+RecurrentNN.jl is a Julia Language library based on Andrej Karpahy's excellent [javascript libaray]
+(http://cs.stanford.edu/people/karpathy/recurrentjs)that implements:
+
+- Deep **Recurrent Neural Networks** (RNN)
+- **Long Short-Term Memory networks** (LSTM)
+- In fact, the library is more general because it has functionality to construct arbitrary **expression graphs** over which the library can perform **automatic differentiation** similar to what you may find in Theano for Python, or in Torch etc. Currently, the code uses this very general functionality to implement RNN/LSTM, but one can build arbitrary Neural Networks and do automatic backprop.
+
+## Online demo in javascript
+
+An online demo that memorizes character sequences can be found below. Sentences are input data and the networks are trained to predict the next character in a sentence. Thus, they learn English from scratch character by character and eventually after some training generate entirely new sentences that sometimes make some sense :)
+
+[Character Sequence Memorization Demo](http://cs.stanford.edu/people/karpathy/recurrentjs)
+
+## Example code
+
+The core of the library is a **Graph** structure which maintains the links between matrices and how they are related th Here is how you would implement a simple Neural Network layer:
+
+```julia
+# T.B.D.
+```
+
+To construct and train an LSTM for example, you would proceed as follows:
+
+```julia
+# T.B.D.
+```
+
+## Warning: Beta
+
+
+## License
+MIT
+
+
