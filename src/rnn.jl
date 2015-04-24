@@ -5,7 +5,7 @@ type RNNLayer # a single layer of a multi-layer RNN
     function RNNLayer(prevsize::Int, hiddensize::Int, std::FloatingPoint)
         wxh = randNNMat(hiddensize, prevsize, std)
         whh = randNNMat(hiddensize, hiddensize, std)
-        wbh = NNMatrix(hiddensize, 1, zeros(hiddensize), zeros(hiddensize))
+        wbh = NNMatrix(hiddensize, 1, zeros(hiddensize,1), zeros(hiddensize,1))
         new(wxh, whh, wbh)
     end
 end
@@ -29,10 +29,9 @@ type RNN <: Model
     end
 end
 
-# this function does not exist in Andrej Karpathy's version
-# due to difference between JavaScript. it has been added
-# to allow the solver to collect and adjust all of the
-# matrices' weights without knowing the structure of any given model
+# this function does not exist in Andrej Karpathy's version.
+#  It has been added to allow the solver to collect and adjust all of the
+# matrices' weights without knowing the structure of any given model.
 function collectNNMat(model::RNN)
     modelNNMats = Array(NNMatrix,0)
     for d in 1:length(model.hiddensizes)
@@ -46,21 +45,22 @@ function collectNNMat(model::RNN)
     return modelNNMats
 end
 
-function forwardprop(g::Graph, model::RNN, x, prevhd, prevout)
+function forwardprop(g::Graph, model::RNN, x, prev)
 
     # forward prop for a single tick of RNN
     # G is graph to append ops to
     # model contains RNN parameters
     # x is 1D column vector with observation
-    # prev is a struct containing hidden activations from last step
+    # prev is a struct containing hidden activations and output from last step
 
+    prevhd, _ = prev # extract previous hidden from the tuple
     hiddenprevs = Array(NNMatrix,0)
     if length(prevhd) == 0
         for hdsize in model.hiddensizes
             push!(hiddenprevs, NNMatrix(hdsize,1))
         end
     else
-      hiddenprevs = prevhd
+        hiddenprevs = prevhd
     end
 
     hidden = Array(NNMatrix,0)
@@ -73,7 +73,6 @@ function forwardprop(g::Graph, model::RNN, x, prevhd, prevout)
         bhh = model.hdlayers[d].bhh
 
 #         println((d,size(wxh.w),(size(input.w))))
-
         h0 = mul(g, wxh, input)
         h1 = mul(g, whh, hdprev)
 #         println((typeof(h0),typeof(h1),typeof(bhh)))
@@ -86,6 +85,6 @@ function forwardprop(g::Graph, model::RNN, x, prevhd, prevout)
 #     println((size(model.whd.w), size(hidden[end].w), size(model.bd.w)))
     output = add(g, mul(g, model.whd, hidden[end]),model.bd)
 
-    # return cell memory, hidden representation and output
+    # return hidden representation and output
     return hidden, output
 end

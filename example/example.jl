@@ -1,21 +1,24 @@
 using RecurrentNN
 reload("RecurrentNN.jl")
 # # global settings
-const generator = "rnn" # can be 'rnn' or 'lstm'
+# const generator = "rnn" # can be 'rnn' or 'lstm'
+const generator = "lstm" # can be 'rnn' or 'lstm'
 const hiddensizes = [20,20] # list of sizes of hidden layers
 const lettersize = 5 # size of letter embeddings
 
 # optimization
 const regc = 0.000001 # L2 regularization strength
-const learning_rate = 0.0008 # learning rate for rnn
+const learning_rate = 0.001 # learning rate for rnn
 const clipval = 5.0 # clip gradients at this value
 
 function initVocab(inpath::String)
 
     f = open(inpath,"r")
-    str = readall(inpath)
-    vocab = sort(setdiff(unique(str),['\r','\n'])) # unique characters in data
     sents = [string(l[1:end-2]) for l in readlines(f)] #split(str,"\r\n") # array of sentences
+    str = ""
+    for s in sents str = "$str $(s[1:end-1])" end
+    vocab = sort(setdiff(unique(str),['\r','\n'])) # unique characters in data
+#     sents = [string(l[1:end-2]) for l in readlines(f)] #split(str,"\r\n") # array of sentences
     inputsize = length(vocab) + 1 # 1 additional token (zero) in used for beginning and end tokens
     outputsize = length(vocab) + 1
     epochsize = length(sents) # nmber of sentence in sample
@@ -31,7 +34,8 @@ end
 
 function initModel(inputsize::Int, lettersize::Int, hiddensizes::Array{Int,1},outputsize::Int)
     wil = RecurrentNN.randNNMat(inputsize,lettersize,.008)
-    nn = RecurrentNN.RNN(lettersize,hiddensizes,outputsize)
+    nn = generator == "rnn"? RecurrentNN.RNN(lettersize,hiddensizes,outputsize):
+            RecurrentNN.LSTM(lettersize,hiddensizes,outputsize)
 #     println((typeof(wil),typeof(nn)))
     return wil, nn
 end
@@ -58,10 +62,6 @@ pplgraph = Dict{Int,FloatingPoint}() # track perplexity
 #             run the model             #
 #########################################
 
-function forwardIndex()
-
-end
-
 function predictsentence(model::RecurrentNN.Model, sent::String)
 
 
@@ -76,8 +76,10 @@ function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::Str
     g = RecurrentNN.Graph()
     log2ppl = 0.0
     cost = 0.0
-    prevhd = Array(RecurrentNN.NNMatrix,0) # final hidden layer of the recurrent model after each forward step
-    prevout = RecurrentNN.NNMatrix(outputsize,1) # output of the recurrent model after each forward step
+    prevhd   = Array(RecurrentNN.NNMatrix,0) # final hidden layer of the recurrent model after each forward step
+    prevcell = Array(RecurrentNN.NNMatrix,0) # final cell output of the LSTM model after each forward step
+    prevout  = RecurrentNN.NNMatrix(outputsize,1) # output of the recurrent model after each forward step
+    prev = (prevhd, prevcell, prevout)
     for i= 0:length(sent)
 
 #         println((i,n))
@@ -85,13 +87,13 @@ function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::Str
         ix_source = i == 0 ? 0 : letterToIndex[sent[i]] # first step: start with START token
         ix_target = i == n ? 0 : letterToIndex[sent[i+1]] # last step: end with END token
 
-#         println((0, i,ix_source,ix_target))
         x = RecurrentNN.rowpluck(g, wil, ix_source+1)
-        prevhd, prevout = RecurrentNN.forwardprop(g, model, x, prevhd, prevout)
 
-#         println((1, i,ix_source,ix_target))
+        # returns a 2-tuple (RNN) or 3-tuples (LSTM). Last part is always output NNMatrix
+        prev = RecurrentNN.forwardprop(g, model, x, prev)
+
         # set gradients into logprobabilities
-        logprobs = prevout # interpret output as logprobs
+        logprobs =  prev[end] # interpret output (last position in tuple) as logprobs
         probs = RecurrentNN.softmax(logprobs) # compute the softmax probabilities
 
 #         println((2, i,ix_source,ix_target))
@@ -102,14 +104,16 @@ function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::Str
         logprobs.dw = probs.w;
         logprobs.dw[ix_target+1] -= 1
     end
-    ppl = (log2ppl/(n-1))^2
+    ppl = (log2ppl/(n))^2
     return g, ppl, cost
 end
 
 function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array, solver::RecurrentNN.Solver, tickiter::Int, pplcurve::Array{FloatingPoint,1})
 
     # sample sentence fromd data
-    sent = sents[rand(1:length(sents))]
+#     sent = sents[rand(1:length(sents))]
+    sent = sents[rand(21:21)]
+#     sent = sents[22]
 #     println((i,sent))
 
     t1 = time_ns() # log start timestamp
@@ -117,7 +121,7 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     # evaluate cost function on a sentence
     g, ppl, cost = costfunc(model,wil, sent)
 
-    # use built up graph to compute backprop (set .dw fields in mats)
+    # use built up graph of backprop functions to compute backprop (set .dw fields in matirices)
     for i = length(g.backprop):-1:1  g.backprop[i]() end
 
     # perform param update ( learning_rate, regc, clipval are global constants)
@@ -150,7 +154,7 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     #     $('#ticktime').text('forw/bwd time per example: ' + tick_time.toFixed(1) + 'ms');
         if tickiter % 50 == 0
             pplmedian = median(pplcurve)
-            println("$tickiter ppl = $(round(pplmedian,4))")
+            println("Perplexity = $(round(pplmedian,4)) @ $tickiter")
             pplgraph[tickiter] = pplmedian
             pplcurve = Array(FloatingPoint,0)
         end
@@ -160,15 +164,15 @@ end
 
 
 tic()
-interations = 500
+interations = 60
 for i = 1:interations
     model, wil, solver, tickiter, pplcurve  = tick(model, wil, sents, solver, tickiter, pplcurve)
 end
 toc()
 
-iter = sort(collect(keys(pplgraph)))
-plotdata = zeros(length(pplgraph),2)
-for i = 1:length(pplgraph)
-    println((float(i), float(pplgraph[iter[i]])))
-end
+# iter = sort(collect(keys(pplgraph)))
+# plotdata = zeros(length(pplgraph),2)
+# for i = 1:length(pplgraph)
+#     println((float(i), round(pplgraph[iter[i]],3)))
+# end
 

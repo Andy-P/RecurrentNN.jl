@@ -1120,7 +1120,7 @@ but just two companies, dropbox and airbnb, account for about three quarters of 
 in startups, the big winners are big to a degree that violates our expectations about variation
 that yields all sorts of strange consequences
 and yet it's true
-[2] you need to do what you know intellectually to be right, even though it feels wrong
+you need to do what you know intellectually to be right, even though it feels wrong
 it's a constant battle for us
 it's hard to make ourselves take enough risks
 when you interview a startup and think "they seem likely to succeed," it's hard not to fund them
@@ -1128,7 +1128,7 @@ their chances of succeeding seem small
 unfortunately picking winners is harder than that
 that's made harder by the fact that the best startup ideas seem at first like bad ideas
 so the most successful founders tend to work on ideas that few beside them realize are good
-" the intersection is the sweet spot for startups
+the intersection is the sweet spot for startups
 this concept is a simple one and yet seeing it as a venn diagram is illuminating
 it reminds you that there is an intersectionthat there are good ideas that seem bad
 it also reminds you that the vast majority of ideas that seem bad are bad
@@ -1147,7 +1147,7 @@ but those are the wrong eyes to look through
 we can afford to take at least 10x as much risk as demo day investors
 and since risk is usually proportionate to reward, if you can afford to take more risk you should
 i don't know what fraction of them currently raise more after demo day
-[5] but the percentage is certainly way over 30%
+but the percentage is certainly way over 30%
 and frankly the thought of a 30% success rate at fundraising makes my stomach clench
 a demo day where only 30% of the startups were fundable would be a shambles
 everyone would agree that yc had jumped the shark
@@ -1201,7 +1201,7 @@ it would work on a moon base, though
 what counts as property depends on what works to treat as property
 and that not only can change, but has changed
 but hunter gatherers didn't treat land, for example, as property in the way we do
-[2] but we are in the midst of such a change now
+but we are in the midst of such a change now
 but with the arrival of networks, it's as if we've moved to a planet with a breathable atmosphere
 data moves like smells now
 but building new things takes too long
@@ -1215,7 +1215,7 @@ ultimately it comes down to common sense
 this is where it's helpful to have working democracies and multiple sovereign countries
 private property is an extremely useful ideaarguably one of our greatest inventions
 so far, each new definition of it has brought us increasing material wealth
-[4] it seems reasonable to suppose the newest one will too
+it seems reasonable to suppose the newest one will too
 in this essay i'm going to demonstrate this phenomenon by describing some
 any one of them could make you a billionaire
 don't worry, it's not a sign of weakness
@@ -1226,7 +1226,7 @@ she says to him:
 here's the thing: if you ever got me, you wouldn't have a clue what to do with me
 that's what these ideas say to us
 this phenomenon is one of the most important things you can understand about startups
-[1] you'd expect big startup ideas to be attractive, but actually they tend to repel you
+you'd expect big startup ideas to be attractive, but actually they tend to repel you
 and that has a bunch of consequences
 even the most ambitious people are probably best off approaching them obliquely
 a new search engine
@@ -1375,7 +1375,7 @@ you'd have to make deals with banks
 plus there are probably all sorts of regulations to comply with
 it's a lot more intimidating to start a startup like this than a recipe site
 that scariness makes ambitious ideas doubly valuable
-(this is also true of starting a startup generally
+(this is also true of starting a startup generally)
 maybe that's one reason the most successful startups of all so often have young founders
 in practice the founders grow with the problems
 but no one seems able to foresee that, not even older, more experienced founders
@@ -1391,8 +1391,7 @@ i was framing the question wrong
 the problem is not that most towns kill startups
 it's that death is the default for startups, and most towns don't save them
 startups in other places are just doing what startups naturally do: fail
-the real question is, what's saving startups in places like silicon valley? [2]
-environment
+the real question is, what's saving startups in places like silicon valley?
 and what drives them both is the number of startup people around you
 it's quite a leap to start a startup
 it's an unusual thing to do
