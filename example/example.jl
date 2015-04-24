@@ -64,9 +64,46 @@ pplgraph = Dict{Int,FloatingPoint}() # track perplexity
 #             run the model             #
 #########################################
 
-function predictsentence(model::RecurrentNN.Model, sent::String)
+function predictsentence(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, samplei::Bool=false, temperature::FloatingPoint=1.0)
 
+    g = RecurrentNN.Graph()
+    s = string("")
+    max_chars_gen = 100
+    prevhd   = Array(RecurrentNN.NNMatrix,0) # final hidden layer of the recurrent model after each forward step
+    prevcell = Array(RecurrentNN.NNMatrix,0) # final cell output of the LSTM model after each forward step
+    prevout  = RecurrentNN.NNMatrix(outputsize,1) # output of the recurrent model after each forward step
+    prev = (prevhd, prevcell, prevout)
+    while true
 
+        # RNN tick
+        ix = length(s) == 0 ? 0 : letterToIndex[s[end]]
+        x = RecurrentNN.rowpluck(g, wil, ix+1) # get letter's embedding (vector)
+
+        # returns a 2-tuple (RNN) or 3-tuples (LSTM). Last part is always output NNMatrix
+        prev = RecurrentNN.forwardprop(g, model, x, prev)
+
+        # sample predicted letter
+        logprobs =  prev[end] # interpret output (last position in tuple) as logprobs
+        if temperature != 1.0 && samplei
+            # scale log probabilities by temperature and renormalize
+            # if temperature is high, logprobs will go towards zero
+            # and the softmax outputs will be more diffuse. if temperature is
+            # very low, the softmax outputs will be more peaky
+            logprobs.w ./= temperature
+        end
+
+        probs = RecurrentNN.softmax(logprobs);
+        ix = samplei? findfirst(p-> p>=rand(), cumsum(prob.w)) : indmax(probs.w);
+
+        # break on out to the other side!
+        if ix == 0 break end # END token predicted, break out
+        if s.length > max_chars_gen break end # something is wrong
+
+        letter = indexToLetter[ix]
+        s = "$(s)$(letter)"
+    end
+
+    return s
 end
 
 function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::String)
@@ -111,8 +148,8 @@ end
 function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array, solver::RecurrentNN.Solver, tickiter::Int, pplcurve::Array{FloatingPoint,1})
 
     # sample sentence fromd data
-    sent = sents[rand(1:21)]
-    # sent = sents[rand(1:length(sents))]
+    sent = sents[rand(1:21)] # use this if just kicking tires (faster)
+    # sent = sents[rand(1:length(sents))] # switch to this for a proper model (8-12hrs)
 
     t1 = time_ns() # log start timestamp
 
@@ -163,9 +200,10 @@ for i = 1:interations
 end
 toc()
 
+pred = predictsentence(model, wil, false, 1.0)
+
 iter = sort(collect(keys(pplgraph)))
 plotdata = zeros(length(pplgraph),2)
 for i = 1:length(pplgraph)
     println((float(i), float(pplgraph[iter[i]])))
 end
-
