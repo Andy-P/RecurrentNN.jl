@@ -1,8 +1,7 @@
-[
 # RecurrentNN.jl
 
 RecurrentNN.jl is a Julia Language library based on Andrej Karpahy's excellent [javascript libaray]
-(http://cs.stanford.edu/people/karpathy/recurrentjs)that implements:
+(http://cs.stanford.edu/people/karpathy/recurrentjs) that implements:
 
 - Deep **Recurrent Neural Networks** (RNN)
 - **Long Short-Term Memory networks** (LSTM)
@@ -33,5 +32,3 @@ To construct and train an LSTM for example, you would proceed as follows:
 
 ## License
 MIT
-
-
