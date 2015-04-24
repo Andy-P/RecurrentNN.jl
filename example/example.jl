@@ -9,7 +9,7 @@ const lettersize = 5 # size of letter embeddings
 # optimization
 const regc = 0.000001 # L2 regularization strength
 const learning_rate = 0.01 # learning rate for rnn
-const clipval = 2.0 # clip gradients at this value
+const clipval = 1.0 # clip gradients at this value
 
 function initVocab(inpath::String)
 
