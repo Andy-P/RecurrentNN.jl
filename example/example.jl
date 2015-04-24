@@ -7,15 +7,15 @@ const lettersize = 5 # size of letter embeddings
 
 # optimization
 const regc = 0.000001 # L2 regularization strength
-const learning_rate = 0.0001 # learning rate
-const clipval = 5.20 # clip gradients at this value
+const learning_rate = 0.0009 # learning rate
+const clipval = 5.0 # clip gradients at this value
 
 function initVocab(inpath::String)
 
     f = open(inpath,"r")
     str = readall(inpath)
     vocab = sort(setdiff(unique(str),['\r','\n'])) # unique characters in data
-    sents = split(str,"\r\n") # array of sentences
+    sents = [string(l[1:end-1]) for l in readlines(f)] #split(str,"\r\n") # array of sentences
     inputsize = length(vocab) + 1 # 1 additional token (zero) in used for beginning and end tokens
     outputsize = length(vocab) + 1
     epochsize = length(sents) # nmber of sentence in sample
@@ -102,15 +102,15 @@ function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::Str
         logprobs.dw = probs.w;
         logprobs.dw[ix_target+1] -= 1
     end
-    ppl = (log2ppl / (n - 1))^2
+    ppl = (log2ppl / (n))^2
     return g, ppl, cost
 end
 
 function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array, solver::RecurrentNN.Solver, tickiter::Int, pplcurve::Array{FloatingPoint,1})
 
     # sample sentence fromd data
-    sentix = rand(1:length(sents))
-
+    sent = sents[rand(1:length(sents))]
+#     println((i,sent))
 
     t1 = time_ns() # log start timestamp
 
@@ -130,7 +130,6 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     tickiter += 1;
     if tickiter % 50 == 0
     # draw samples
-    println("#samples $tickiter")
 #     for(var q=0;q<5;q++) {
 #       var pred = predictSentence(model, true, sample_softmax_temperature);
 #       var pred_div = '<div class="apred">'+pred+'</div>'
@@ -149,20 +148,21 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     #     $('#epoch').text('epoch: ' + (tick_iter/epoch_size).toFixed(2));
     #     $('#ppl').text('perplexity: ' + cost_struct.ppl.toFixed(2));
     #     $('#ticktime').text('forw/bwd time per example: ' + tick_time.toFixed(1) + 'ms');
-        if tickiter % 100 == 0
+        if tickiter % 50 == 0
             pplmedian = median(pplcurve)
+            println("$tickiter ppl = $(round(pplmedian,4))")
             pplgraph[tickiter] = pplmedian
             pplcurve = Array(FloatingPoint,0)
         end
     end
-    return model, wil, solver, tickiter
+    return model, wil, solver, tickiter, pplcurve
 end
 
 
 tic()
-interations =  10000
+interations =  500
 for i = 1:interations
-    model, wil, solver, tickiter  = tick(model, wil, sents, solver, tickiter, pplcurve)
+    model, wil, solver, tickiter, pplcurve  = tick(model, wil, sents, solver, tickiter, pplcurve)
 end
 toc()
 
@@ -172,3 +172,4 @@ for i = 1:length(pplgraph)
     println((float(i), float(pplgraph[iter[i]])))
 end
 
+ß
