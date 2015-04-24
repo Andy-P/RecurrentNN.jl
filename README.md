@@ -1,6 +1,6 @@
 # RecurrentNN.jl
 
-RecurrentNN.jl is a Julia language package based on Andrej Karpathy's excellent [javascript library]
+RecurrentNN.jl is a Julia language package based on Andrej Karpathy's excellent [RecurrentJS] library in javascript
 (http://cs.stanford.edu/people/karpathy/recurrentjs) that implements:
 
 - Deep **Recurrent Neural Networks** (RNN)
