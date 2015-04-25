@@ -1,6 +1,8 @@
 type Graph
    backprop::Array{Function,1}
-   Graph() = new(Array(Function,0))
+   doBp::Bool
+   Graph() = new(Array(Function,0),false)
+   Graph(backPropNeeded::Bool) = new(Array(Function,0),backPropNeeded)
 end
 
 function rowpluck(g::Graph, m::NNMatrix, ix::Int)
@@ -8,6 +10,7 @@ function rowpluck(g::Graph, m::NNMatrix, ix::Int)
     out = NNMatrix(m.d, 1)
     out.w[:,1] = m.w[ix,:]'
     # backprop function
+
     push!(g.backprop,
           function ()
              @inbounds m.dw[ix,:] += out.dw[:,1]'

@@ -49,8 +49,10 @@ solver = RecurrentNN.Solver() # RMSProp optimizer
 # init the text source
 sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
     initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
+indexToLetter
 
 sents[21]
+letterToIndex
 
 # init the rnn/lstm
 wil, model = initModel(inputsize, lettersize, hiddensizes, outputsize)
@@ -64,16 +66,17 @@ pplgraph = Dict{Int,FloatingPoint}() # track perplexity
 #             run the model             #
 #########################################
 
-function predictsentence(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, samplei::Bool=false, temperature::FloatingPoint=1.0)
+function predictsentence(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, samplei::Bool=false, temp::FloatingPoint=1.0)
 
-    g = RecurrentNN.Graph()
-    s = string("")
+    g = RecurrentNN.Graph(false) # backprop not needed
+    s = ""
     max_chars_gen = 100
     prevhd   = Array(RecurrentNN.NNMatrix,0) # final hidden layer of the recurrent model after each forward step
     prevcell = Array(RecurrentNN.NNMatrix,0) # final cell output of the LSTM model after each forward step
     prevout  = RecurrentNN.NNMatrix(outputsize,1) # output of the recurrent model after each forward step
     prev = (prevhd, prevcell, prevout)
-    while true
+    cnt = 0
+    while cnt < 100
 
         # RNN tick
         ix = length(s) == 0 ? 0 : letterToIndex[s[end]]
@@ -84,23 +87,26 @@ function predictsentence(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sa
 
         # sample predicted letter
         logprobs =  prev[end] # interpret output (last position in tuple) as logprobs
-        if temperature != 1.0 && samplei
+        if temp != 1.0 && samplei
             # scale log probabilities by temperature and renormalize
-            # if temperature is high, logprobs will go towards zero
-            # and the softmax outputs will be more diffuse. if temperature is
+            # if temp is high, logprobs will go towards zero
+            # and the softmax outputs will be more diffuse. if temp is
             # very low, the softmax outputs will be more peaky
-            logprobs.w ./= temperature
+            logprobs.w ./= temp
         end
 
         probs = RecurrentNN.softmax(logprobs);
-        ix = samplei? findfirst(p-> p>=rand(), cumsum(prob.w)) : indmax(probs.w);
+        rndIX = rand()
+        ix = samplei? findfirst(p-> p >= rndIX, cumsum(probs.w)) : indmax(probs.w);
 
         # break on out to the other side!
-        if ix == 0 break end # END token predicted, break out
-        if s.length > max_chars_gen break end # something is wrong
+        if ix-1 == 0 break end # END token predicted, break out
+        if length(s) > max_chars_gen break end # something is wrong
 
-        letter = indexToLetter[ix]
+#         print
+        letter = indexToLetter[ix-1]
         s = "$(s)$(letter)"
+        cnt = cnt + 1
     end
 
     return s
@@ -148,8 +154,8 @@ end
 function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array, solver::RecurrentNN.Solver, tickiter::Int, pplcurve::Array{FloatingPoint,1})
 
     # sample sentence fromd data
-#     sent = sents[rand(1:21)] # use this if just kicking tires (faster)
-    sent = sents[rand(1:length(sents))] # switch to this for a proper model (8-12hrs)
+    sent = sents[rand(1:21)] # use this if just kicking tires (faster)
+#     sent = sents[rand(1:length(sents))] # switch to this for a proper model (8-12hrs)
 
     t1 = time_ns() # log start timestamp
 
@@ -169,19 +175,15 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     tickiter += 1;
     if tickiter % 50 == 0
     # draw samples
-#     for(var q=0;q<5;q++) {
-#       var pred = predictSentence(model, true, sample_softmax_temperature);
-#       var pred_div = '<div class="apred">'+pred+'</div>'
-#       $('#samples').append(pred_div);
-#     }
+        for i =1:3
+            pred = predictsentence(model, wil, true, 1.0)
+            println("   $(i). $pred ")
+        end
     end
 
     if tickiter % 10 == 0
     #     // draw argmax prediction
-    #     $('#argmax').html('');
-    #     var pred = predictSentence(model, false);
-    #     var pred_div = '<div class="apred">'+pred+'</div>'
-    #     $('#argmax').append(pred_div);
+    #     var pred = predictSentence(model, false)
 
         if tickiter % 50 == 0
             pplmedian = median(pplcurve)
@@ -193,21 +195,20 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     return model, wil, solver, tickiter, pplcurve
 end
 
+function saveCostFuncLog(path::String)
+    iter = sort(collect(keys(pplgraph)))
+    plotdata = zeros(length(pplgraph),2)
+    for i = 1:length(pplgraph)
+        println((float(i), float(pplgraph[iter[i]])))
+        plotdata[i,1] = float(i)
+        plotdata[i,2] = pplgraph[iter[i]]
+    end
+    writecsv(joinpath(dirname(@__FILE__),path),plotdata)
+end
+
 tic()
-interations = 10000
+interations = 1050
 for i = 1:interations
     model, wil, solver, tickiter, pplcurve  = tick(model, wil, sents, solver, tickiter, pplcurve)
 end
 toc()
-
-# pred = predictsentence(model, wil, false, 1.0)
-
-iter = sort(collect(keys(pplgraph)))
-plotdata = zeros(length(pplgraph),2)
-for i = 1:length(pplgraph)
-    println((float(i), float(pplgraph[iter[i]])))
-    plotdata[i,1] = float(i)
-    plotdata[i,2] = pplgraph[iter[i]]
-end
-
-# writecsv(joinpath(dirname(@__FILE__),"plotdata_fast.csv"),plotdata)
