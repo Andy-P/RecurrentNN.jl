@@ -22,15 +22,15 @@ function step(solver::Solver, model::Model, stepsize::FloatingPoint, regc::Float
         end
     end
 
-      for k = 1:length(modelMatices)
-          @inbounds m = modelMatices[k] # mat ref
-          @inbounds s = solver.stepcache[k]
-          for i = 1:m.n
+    for k = 1:length(modelMatices)
+        @inbounds m = modelMatices[k] # mat ref
+        @inbounds s = solver.stepcache[k]
+        for i = 1:m.n
             for j = 1:m.d
 
                 # rmsprop adaptive learning rate
                 @inbounds mdwi = m.dw[i,j]
-                @inbounds s.w[i,j] = s.w[i,j] * solver.decayrate + (1.0 - solver.decayrate) * mdwi * mdwi;
+                @inbounds s.w[i,j] = s.w[i,j] * solver.decayrate + (1.0 - solver.decayrate) * mdwi^2
 
                 # gradient clip
                 if mdwi > clipval

@@ -1,4 +1,4 @@
-abstract Model
+abstract Model # this is either an LSTM or RNN
 
 type NNMatrix # Neural net layer's weights & gradients
     n::Int

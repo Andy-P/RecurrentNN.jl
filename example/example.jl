@@ -9,7 +9,7 @@ const lettersize = 5 # size of letter embeddings
 # optimization
 const regc = 0.000001 # L2 regularization strength
 const learning_rate = 0.01 # learning rate for rnn
-const clipval = 1.0 # clip gradients at this value
+const clipval = 5.0 # clip gradients at this value
 
 function initVocab(inpath::String)
 
@@ -33,7 +33,7 @@ function initVocab(inpath::String)
 end
 
 function initModel(inputsize::Int, lettersize::Int, hiddensizes::Array{Int,1},outputsize::Int)
-    wil = RecurrentNN.randNNMat(inputsize,lettersize,.008)
+    wil = RecurrentNN.randNNMat(inputsize,lettersize,0.08)
     nn = generator == "rnn"? RecurrentNN.RNN(lettersize,hiddensizes,outputsize):
             RecurrentNN.LSTM(lettersize,hiddensizes,outputsize)
     # println((typeof(wil),typeof(nn)))
@@ -148,8 +148,8 @@ end
 function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array, solver::RecurrentNN.Solver, tickiter::Int, pplcurve::Array{FloatingPoint,1})
 
     # sample sentence fromd data
-    sent = sents[rand(1:21)] # use this if just kicking tires (faster)
-    # sent = sents[rand(1:length(sents))] # switch to this for a proper model (8-12hrs)
+#     sent = sents[rand(1:21)] # use this if just kicking tires (faster)
+    sent = sents[rand(1:length(sents))] # switch to this for a proper model (8-12hrs)
 
     t1 = time_ns() # log start timestamp
 
@@ -194,16 +194,20 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
 end
 
 tic()
-interations = 600
+interations = 10000
 for i = 1:interations
     model, wil, solver, tickiter, pplcurve  = tick(model, wil, sents, solver, tickiter, pplcurve)
 end
 toc()
 
-pred = predictsentence(model, wil, false, 1.0)
+# pred = predictsentence(model, wil, false, 1.0)
 
 iter = sort(collect(keys(pplgraph)))
 plotdata = zeros(length(pplgraph),2)
 for i = 1:length(pplgraph)
     println((float(i), float(pplgraph[iter[i]])))
+    plotdata[i,1] = float(i)
+    plotdata[i,2] = pplgraph[iter[i]]
 end
+
+# writecsv(joinpath(dirname(@__FILE__),"plotdata_fast.csv"),plotdata)
