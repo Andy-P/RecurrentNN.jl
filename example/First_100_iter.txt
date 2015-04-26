@@ -1,0 +1,40 @@
+Perplexity = 28.0 @ 10
+   1. w u-ty ieog ftne srhhafcdncougsrtgay mctwwr oegoy  infhnlvthah pnw otmgus9f tt itgehtstt caaat r-wa
+   2. tanttrhissncrphll   psna rtatheve
+   Argmax: tt
+Perplexity = 19.6809 @ 20
+   1. noa  rienlt
+   2. t enf etltlreichpsioo iuorurnoront egbdrrs oalttblsghln uettiyth
+   Argmax:
+Perplexity = 18.9894 @ 30
+   1. ilteos  treume tansta uynxe, haaoatbsdcureors pt,cyslra
+   2. i humgwll,aeaieetr%stdotswoopsor  ett
+   Argmax:
+Perplexity = 18.7596 @ 40
+   1. ltlsshest o ebihtsit
+   2. wnagpd  wbeutjiecchd eftne
+   Argmax:
+Perplexity = 18.7444 @ 50
+   1. t nereeiih 'aonafetftfela)nvstiteo,ttidi lrgillbvbt der wd nertsb
+   2.  uia rtno efvragoioamc
+   Argmax:
+Perplexity = 19.1989 @ 60
+   1. flfegn nun tnoucohwoue yw'aokhsle  t t: h tm
+   2. e ealaflia
+   Argmax:
+Perplexity = 18.9794 @ 70
+   1.  x go a awvrtoo  eunrenlveaatm
+   2. sylaoyo ouesiur
+   Argmax:
+Perplexity = 18.6502 @ 80
+   1. x nae chmnrosuiiseos  tyntcwoo syiaouwetrout
+   2. lll ofec'et fba eo aoeooeusill p t'  nuukvte
+   Argmax:
+Perplexity = 17.933 @ 90
+   1. seu o g td tn oilien meogeucy tscegnra9tngloootuflgmo tiolmecgefo pmesof hheeh?le tyaw rv nstodf   m
+   2. wstnachh ydrwr aw ayhiasgl te it ohyytn sitosoa hfyiaot psweeenyrplacat iotbej twiiisf ifjitoernr oi
+   Argmax:
+Perplexity = 18.6698 @ 100
+   1. t  freir gvt ldws arsyioig horlrntots  ote ur c hoflnaere d reget,aspcsllrsmrnt eutrr fvedtandxais m
+   2. tn gnnio tiafiiacntt a e lrosgtniiormrttt e
+   Argmax:

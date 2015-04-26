@@ -49,10 +49,6 @@ solver = RecurrentNN.Solver() # RMSProp optimizer
 # init the text source
 sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
     initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
-indexToLetter
-
-sents[21]
-letterToIndex
 
 # init the rnn/lstm
 wil, model = initModel(inputsize, lettersize, hiddensizes, outputsize)
@@ -131,9 +127,10 @@ function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::Str
         ix_source = i == 0 ? 0 : letterToIndex[sent[i]] # first step: start with START token
         ix_target = i == n ? 0 : letterToIndex[sent[i+1]] # last step: end with END token
 
+        # get the letter embbeding of the char
         x = RecurrentNN.rowpluck(g, wil, ix_source+1)
 
-        # returns a 2-tuple (RNN) or 3-tuples (LSTM). Last part is always output NNMatrix
+        # returns a 2-tuple (RNN) or 3-tuples (LSTM). Last part of tuple is always the output NNMatrix
         prev = RecurrentNN.forwardprop(g, model, x, prev)
 
         # set gradients into logprobabilities
@@ -144,7 +141,7 @@ function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::Str
         cost += -log(probs.w[ix_target+1])
 
         # write gradients into log probabilities
-        logprobs.dw = probs.w;
+        logprobs.dw = probs.w
         logprobs.dw[ix_target+1] -= 1
     end
     ppl = (log2ppl/(n))^2
@@ -154,8 +151,8 @@ end
 function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array, solver::RecurrentNN.Solver, tickiter::Int, pplcurve::Array{FloatingPoint,1})
 
     # sample sentence fromd data
-    sent = sents[rand(1:21)] # use this if just kicking tires (faster)
-#     sent = sents[rand(1:length(sents))] # switch to this for a proper model (8-12hrs)
+#     sent = sents[rand(1:21)] # use this if just kicking tires (faster)
+    sent = sents[rand(1:length(sents))] # switch to this for a proper model (8-12hrs)
 
     t1 = time_ns() # log start timestamp
 
@@ -173,25 +170,21 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     push!(pplcurve, ppl) #keep track of perplexity
 
     tickiter += 1;
-    if tickiter % 50 == 0
-    # draw samples
-        for i =1:3
+
+    if tickiter % 50 == 0 # output sample sentences every Xth iteration
+        pplmedian = median(pplcurve)
+        println("Perplexity = $(round(pplmedian,4)) @ $tickiter")
+        pplgraph[tickiter] = pplmedian
+        pplcurve = Array(FloatingPoint,0)
+        # draw samples to see how we're doing
+        for i =1:2
             pred = predictsentence(model, wil, true, 1.0)
             println("   $(i). $pred ")
         end
+        # greedy argmax (i.e if we were to select the most likely letter at each point)
+        println("   Argmax: $(predictsentence(model, wil,false))")
     end
 
-    if tickiter % 10 == 0
-    #     // draw argmax prediction
-    #     var pred = predictSentence(model, false)
-
-        if tickiter % 50 == 0
-            pplmedian = median(pplcurve)
-            println("Perplexity = $(round(pplmedian,4)) @ $tickiter")
-            pplgraph[tickiter] = pplmedian
-            pplcurve = Array(FloatingPoint,0)
-        end
-    end
     return model, wil, solver, tickiter, pplcurve
 end
 
@@ -203,12 +196,10 @@ function saveCostFuncLog(path::String)
         plotdata[i,1] = float(i)
         plotdata[i,2] = pplgraph[iter[i]]
     end
-    writecsv(joinpath(dirname(@__FILE__),path),plotdata)
+#     writecsv(path),plotdata)
 end
 
-tic()
-interations = 1050
+interations = 1000
 for i = 1:interations
     model, wil, solver, tickiter, pplcurve  = tick(model, wil, sents, solver, tickiter, pplcurve)
 end
-toc()
