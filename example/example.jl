@@ -17,7 +17,15 @@ function initVocab(inpath::String)
     f = open(inpath,"r")
     sents = [string(l[1:end-1]) for l in readlines(f)] # split(str,"\r\n") # array of sentences
     str = ""
-    for s in sents str = "$str $(s[1:end-1])" end
+    for i in 1:length(sents)
+        s = sents[i]
+        if contains(s,"\r")
+            idx = findfirst(s,'\r')
+            s = s[1:idx-1]
+            sents[i] = s
+        end
+        str = "$str $(s[1:end-1])"
+    end
     vocab = sort(setdiff(unique(str),['\r','\n'])) # unique characters in data
     # sents = [string(l[1:end-2]) for l in readlines(f)] #split(str,"\r\n") # array of sentences
     inputsize = length(vocab) + 1 # 1 additional token (zero) in used for beginning and end tokens
