@@ -1,9 +1,10 @@
 using RecurrentNN
-reload("RecurrentNN.jl")
+# reload("RecurrentNN.jl")
 # # global settings
 # const generator = "rnn" # can be 'rnn' or 'lstm'
 const generator = "lstm" # can be 'rnn' or 'lstm'
 const hiddensizes = [20,20] # list of sizes of hidden layers
+# const hiddensizes = [100] # uncomment to run full model
 const lettersize = 5 # size of letter embeddings
 
 # optimization
@@ -33,9 +34,9 @@ function initVocab(inpath::String)
 end
 
 function initModel(inputsize::Int, lettersize::Int, hiddensizes::Array{Int,1},outputsize::Int)
-    wil = RecurrentNN.randNNMat(inputsize,lettersize,0.08)
-    nn = generator == "rnn"? RecurrentNN.RNN(lettersize,hiddensizes,outputsize):
-            RecurrentNN.LSTM(lettersize,hiddensizes,outputsize)
+    wil = randNNMat(inputsize,lettersize,0.08)
+    nn = generator == "rnn"? RNN(lettersize,hiddensizes,outputsize):
+        LSTM(lettersize,hiddensizes,outputsize)
     # println((typeof(wil),typeof(nn)))
     return wil, nn
 end
@@ -44,7 +45,7 @@ end
 #          initialize the model         #
 #########################################
 
-solver = RecurrentNN.Solver() # RMSProp optimizer
+solver = Solver() # RMSProp optimizer
 
 # init the text source
 sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
@@ -55,6 +56,7 @@ wil, model = initModel(inputsize, lettersize, hiddensizes, outputsize)
 
 tickiter = 0
 
+ppl = Inf # perplexity will slowly move towards 0
 pplcurve = Array(FloatingPoint,0) # track perplexity
 pplgraph = Dict{Int,FloatingPoint}() # track perplexity
 
@@ -62,24 +64,24 @@ pplgraph = Dict{Int,FloatingPoint}() # track perplexity
 #             run the model             #
 #########################################
 
-function predictsentence(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, samplei::Bool=false, temp::FloatingPoint=1.0)
+function predictsentence(model::Model, wil::NNMatrix, samplei::Bool=false, temp::FloatingPoint=1.0)
 
-    g = RecurrentNN.Graph(false) # backprop not needed
+    g = Graph(false) # backprop not needed
     s = ""
     max_chars_gen = 100
-    prevhd   = Array(RecurrentNN.NNMatrix,0) # final hidden layer of the recurrent model after each forward step
-    prevcell = Array(RecurrentNN.NNMatrix,0) # final cell output of the LSTM model after each forward step
-    prevout  = RecurrentNN.NNMatrix(outputsize,1) # output of the recurrent model after each forward step
+    prevhd   = Array(NNMatrix,0) # final hidden layer of the recurrent model after each forward step
+    prevcell = Array(NNMatrix,0) # final cell output of the LSTM model after each forward step
+    prevout  = NNMatrix(outputsize,1) # output of the recurrent model after each forward step
     prev = (prevhd, prevcell, prevout)
     cnt = 0
     while cnt < 100
 
         # RNN tick
         ix = length(s) == 0 ? 0 : letterToIndex[s[end]]
-        x = RecurrentNN.rowpluck(g, wil, ix+1) # get letter's embedding (vector)
+        x = rowpluck(g, wil, ix+1) # get letter's embedding (vector)
 
-        # returns a 2-tuple (RNN) or 3-tuples (LSTM). Last part is always output NNMatrix
-        prev = RecurrentNN.forwardprop(g, model, x, prev)
+        # returns a 2-tuple (RNN) or 3-tuples (LSTM). Last part is always outputNNMatrix
+        prev = forwardprop(g, model, x, prev)
 
         # sample predicted letter
         logprobs =  prev[end] # interpret output (last position in tuple) as logprobs
@@ -91,7 +93,7 @@ function predictsentence(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sa
             logprobs.w ./= temp
         end
 
-        probs = RecurrentNN.softmax(logprobs);
+        probs = softmax(logprobs)
         rndIX = rand()
         ix = samplei? findfirst(p-> p >= rndIX, cumsum(probs.w)) : indmax(probs.w);
 
@@ -108,18 +110,18 @@ function predictsentence(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sa
     return s
 end
 
-function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::String)
+function costfunc(model:: Model, wil::NNMatrix, sent::String)
 
     # takes a model and a sentence and
     # calculates the loss. Also returns the Graph
     # object which can be used to do backprop
     n = length(sent)
-    g = RecurrentNN.Graph()
+    g =  Graph()
     log2ppl = 0.0
     cost = 0.0
-    prevhd   = Array(RecurrentNN.NNMatrix,0) # final hidden layer of the recurrent model after each forward step
-    prevcell = Array(RecurrentNN.NNMatrix,0) # final cell output of the LSTM model after each forward step
-    prevout  = RecurrentNN.NNMatrix(outputsize,1) # output of the recurrent model after each forward step
+    prevhd   = Array(NNMatrix,0) # final hidden layer of the recurrent model after each forward step
+    prevcell = Array(NNMatrix,0) # final cell output of the LSTM model after each forward step
+    prevout  = NNMatrix(outputsize,1) # output of the recurrent model after each forward step
     prev = (prevhd, prevcell, prevout)
     for i= 0:length(sent)
 
@@ -128,14 +130,14 @@ function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::Str
         ix_target = i == n ? 0 : letterToIndex[sent[i+1]] # last step: end with END token
 
         # get the letter embbeding of the char
-        x = RecurrentNN.rowpluck(g, wil, ix_source+1)
+        x = rowpluck(g, wil, ix_source+1)
 
-        # returns a 2-tuple (RNN) or 3-tuples (LSTM). Last part of tuple is always the output NNMatrix
-        prev = RecurrentNN.forwardprop(g, model, x, prev)
+        # returns a 2-tuple (RNN) or 3-tuples (LSTM). Last part of tuple is always the outputNNMatrix
+        prev = forwardprop(g, model, x, prev)
 
         # set gradients into logprobabilities
         logprobs =  prev[end] # interpret output (last position in tuple) as logprobs
-        probs = RecurrentNN.softmax(logprobs) # compute the softmax probabilities
+        probs = softmax(logprobs) # compute the softmax probabilities
 
         log2ppl += -log2(probs.w[ix_target+1]) # accumulate base 2 log prob and do smoothing
         cost += -log(probs.w[ix_target+1])
@@ -148,7 +150,7 @@ function costfunc(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sent::Str
     return g, ppl, cost
 end
 
-function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array, solver::RecurrentNN.Solver, tickiter::Int, pplcurve::Array{FloatingPoint,1})
+function tick(model::Model, wil::NNMatrix, sents::Array, solver::Solver, tickiter::Int, pplcurve::Array{FloatingPoint,1})
 
     # sample sentence fromd data
 #     sent = sents[rand(1:21)] # use this if just kicking tires (faster)
@@ -163,7 +165,7 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     for i = length(g.backprop):-1:1  g.backprop[i]() end
 
     # perform param update ( learning_rate, regc, clipval are global constants)
-    solverstats = RecurrentNN.step(solver, model, learning_rate, regc, clipval)
+    solverstats = step(solver, model, learning_rate, regc, clipval)
 
     tm = (time_ns()-t1)/1e9
 
@@ -172,8 +174,8 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
     tickiter += 1;
 
     if tickiter % 50 == 0 # output sample sentences every Xth iteration
-        pplmedian = median(pplcurve)
-        println("Perplexity = $(round(pplmedian,4)) @ $tickiter")
+        pplmedian = round(median(pplcurve),4)
+        println("Perplexity = $(pplmedian) @ $tickiter")
         pplgraph[tickiter] = pplmedian
         pplcurve = Array(FloatingPoint,0)
         # draw samples to see how we're doing
@@ -182,24 +184,15 @@ function tick(model::RecurrentNN.Model, wil::RecurrentNN.NNMatrix, sents::Array,
             println("   $(i). $pred ")
         end
         # greedy argmax (i.e if we were to select the most likely letter at each point)
-        println("   Argmax: $(predictsentence(model, wil,false))")
+        println("   Argmax: $(predictsentence(model, wil, false))")
     end
 
-    return model, wil, solver, tickiter, pplcurve
+    return model, wil, solver, tickiter, pplcurve, ppl
 end
 
-function saveCostFuncLog(path::String)
-    iter = sort(collect(keys(pplgraph)))
-    plotdata = zeros(length(pplgraph),2)
-    for i = 1:length(pplgraph)
-        println((float(i), float(pplgraph[iter[i]])))
-        plotdata[i,1] = float(i)
-        plotdata[i,2] = pplgraph[iter[i]]
-    end
-#     writecsv(path),plotdata)
-end
 
-interations = 1000
-for i = 1:interations
-    model, wil, solver, tickiter, pplcurve  = tick(model, wil, sents, solver, tickiter, pplcurve)
+maxIter =  1000 # make this about 100_000 to run full model
+trgppl = 1.1 # stop if this perplexity score is reached
+while tickiter < maxIter && ppl > trgppl
+    model, wil, solver, tickiter, pplcurve, ppl = tick(model, wil, sents, solver, tickiter, pplcurve)
 end
