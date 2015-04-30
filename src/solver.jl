@@ -12,8 +12,8 @@ function step(solver::Solver, model::Model, stepsize::FloatingPoint, regc::Float
     numclipped = 0
     numtot = 0
 
-    # New function not in orginal recurrentjs. Needed to gather all matrices into on collection
-    modelMatices = collectNNMat(model)
+    # All of the matrices used by the model
+    modelMatices = model.matrices
 
     # init stepcache if needed
     if length(solver.stepcache) == 0
