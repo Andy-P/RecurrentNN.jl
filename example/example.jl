@@ -47,6 +47,8 @@ end
 
 solver = Solver() # RMSProp optimizer
 
+g =  Graph()
+
 # init the text source
 sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
     initVocab(joinpath(dirname(@__FILE__),"samples.txt"))
@@ -66,7 +68,8 @@ pplgraph = Dict{Int,FloatingPoint}() # track perplexity
 
 function predictsentence(model::Model, wil::NNMatrix, samplei::Bool=false, temp::FloatingPoint=1.0)
 
-    g = Graph(false) # backprop not needed
+    nobackprop!(g) # backprop not needed
+    resetposition!(g)
     s = ""
     max_chars_gen = 100
     prevhd   = Array(NNMatrix,0) # final hidden layer of the recurrent model after each forward step
@@ -116,7 +119,9 @@ function costfunc(model:: Model, wil::NNMatrix, sent::String)
     # calculates the loss. Also returns the Graph
     # object which can be used to do backprop
     n = length(sent)
-    g =  Graph()
+    resetposition!(g)
+    dobackprop!(g) # ensure backprop on
+
     log2ppl = 0.0
     cost = 0.0
     prevhd   = Array(NNMatrix,0) # final hidden layer of the recurrent model after each forward step
@@ -161,8 +166,10 @@ function tick(model::Model, wil::NNMatrix, sents::Array, solver::Solver, tickite
     # evaluate cost function on a sentence
     g, ppl, cost = costfunc(model,wil, sent)
 
+    println("g.nodes $(g.pos) $(length(g.backprop))")
+
     # use built up graph of backprop functions to compute backprop (set .dw fields in matirices)
-    for i = length(g.backprop):-1:1  g.backprop[i]() end
+    for i = g.pos:-1:1  g.backprop[i]() end
 
     # perform param update ( learning_rate, regc, clipval are global constants)
     solverstats = step(solver, model, learning_rate, regc, clipval)
@@ -191,7 +198,7 @@ function tick(model::Model, wil::NNMatrix, sents::Array, solver::Solver, tickite
 end
 
 
-maxIter =  50 # make this about 100_000 to run full model
+maxIter =  250 # make this about 100_000 to run full model
 trgppl = 1.1 # stop if this perplexity score is reached
 while tickiter < maxIter && ppl > trgppl
     model, wil, solver, tickiter, pplcurve, ppl = tick(model, wil, sents, solver, tickiter, pplcurve)

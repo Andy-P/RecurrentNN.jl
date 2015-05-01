@@ -1,26 +1,41 @@
 type Graph
    backprop::Array{Function,1}
    doBackprop::Bool # backprop only needed during learning. Can turn off for prediction
-   Graph() = new(Array(Function,0),true)
-   Graph(backPropNeeded::Bool) = new(Array(Function,0),backPropNeeded)
+   nodes::Array{NNMatrix,1}  # holds preallocated arrays for processing gradients
+   pos::Int # position in graph preallocated arrays/nodes
+   Graph() = new(Array(Function,0),true,Array(NNMatrix,0),0)
+   Graph(backPropNeeded::Bool) = new(Array(Function,0),backPropNeeded,Array(NNMatrix,0),0)
 end
+
+function resetposition!(g::Graph)
+    g.pos = 0
+    g.backprop = Array(Function,0)
+end
+
+dobackprop!(g::Graph) =  g.doBackprop = true
+nobackprop!(g::Graph) =  g.doBackprop = false
 
 function rowpluck(g::Graph, m::NNMatrix, ix::Int)
     # pluck a row of m and return it as a column vector
-    out = NNMatrix(m.d, 1)
+    g.pos += 1
+    if g.pos > length(g.nodes) push!(g.nodes,NNMatrix(m.d, 1)) end
+    out = g.nodes[g.pos]
     out.w[:,1] = m.w[ix,:]'
     # backprop function
     if g.doBackprop
         push!(g.backprop,
-              function ()
-                 m.dw[ix,:] += out.dw[:,1]'
+                function ()
+                    m.dw[ix,:] += out.dw[:,1]'
+                    out.dw[:,:] = 0 # clear
               end )
     end
     return out
 end
 
 function tanh(g::Graph, m::NNMatrix)
-    out = NNMatrix(m.n, m.d)
+    g.pos += 1
+    if g.pos > length(g.nodes) push!(g.nodes,NNMatrix(m.n, m.d)) end
+    out = g.nodes[g.pos]
     out.w = tanh(m.w)
     # backprop function
     if g.doBackprop
@@ -31,13 +46,16 @@ function tanh(g::Graph, m::NNMatrix)
                           @inbounds m.dw[i,j] += (1. - out.w[i,j]^2) * out.dw[i,j]
                       end
                   end
+                  out.dw[:,:] = 0 # clear
               end )
     end
     return out
 end
 
 function sigmoid(g::Graph, m::NNMatrix)
-    out = NNMatrix(m.n, m.d)
+    g.pos += 1
+    if g.pos > length(g.nodes) push!(g.nodes,NNMatrix(m.n, m.d)) end
+    out = g.nodes[g.pos]
     out.w = ones(m.w) ./ (ones(m.w) .+ exp(-m.w)) # sigmoid function
     # backprop function
     if g.doBackprop
@@ -48,13 +66,16 @@ function sigmoid(g::Graph, m::NNMatrix)
                           @inbounds m.dw[i,j] +=  out.w[i,j] * (1. - out.w[i,j]) *  out.dw[i,j]
                       end
                   end
+                  out.dw[:,:] = 0 # clear
               end )
     end
     return out
 end
 
 function relu(g::Graph, m::NNMatrix)
-    out = NNMatrix(m.n, m.d)
+    g.pos += 1
+    if g.pos > length(g.nodes) push!(g.nodes,NNMatrix(m.n, m.d)) end
+    out = g.nodes[g.pos]
     for i = 1:m.n
       for j = 1:m.d
           @inbounds out.w[i,j] = m.w[i,j] < 0. ? 0. :  m.w[i,j]
@@ -63,19 +84,22 @@ function relu(g::Graph, m::NNMatrix)
     # backprop function
     if g.doBackprop
         push!(g.backprop,
-          function ()
-              for i = 1:m.n
-                  for j = 1:m.d
-                      @inbounds m.dw[i,j] +=  m.w[i,j] < 0. ? 0 : out.dw[i,j]
-                  end
-              end
-          end )
+            function ()
+                for i = 1:m.n
+                    for j = 1:m.d
+                        @inbounds m.dw[i,j] +=  m.w[i,j] < 0. ? 0 : out.dw[i,j]
+                    end
+                end
+                out.dw[:,:] = 0 # clear
+              end )
     end
     return out
 end
 
 function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
-    out = NNMatrix(m1.n, m2.d)
+    g.pos += 1
+    if g.pos > length(g.nodes) push!(g.nodes,NNMatrix(m1.n, m2.d)) end
+    out = g.nodes[g.pos]
 #     println((m1.n, m2.d))
     n = m1.n
     d = m2.d
@@ -102,26 +126,32 @@ function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
                           end
                       end
                   end
+                  out.dw[:,:] = 0 # clear
               end )
     end
     return out
 end
 
 function add(g::Graph, m1::NNMatrix, m2::NNMatrix)
-    out = NNMatrix(m1.n, m1.d)
+    g.pos += 1
+    if g.pos > length(g.nodes) push!(g.nodes,NNMatrix(m1.n, m1.d)) end
+    out = g.nodes[g.pos]
     out.w = m1.w .+ m2.w
     if g.doBackprop
         push!(g.backprop,
             function ()
                   m1.dw .+= out.dw
                   m2.dw .+= out.dw
+                  out.dw[:,:] = 0 # clear
             end )
     end
     return out
 end
 
 function eltmul(g::Graph, m1::NNMatrix, m2::NNMatrix) # element-wise multiplication
-    out = NNMatrix(m1.n, m2.d)
+    g.pos += 1
+    if g.pos > length(g.nodes) push!(g.nodes,NNMatrix(m1.n, m2.d)) end
+    out = g.nodes[g.pos]
     out.w = m1.w .* m2.w
     # backprop function
     if g.doBackprop
@@ -129,6 +159,7 @@ function eltmul(g::Graph, m1::NNMatrix, m2::NNMatrix) # element-wise multiplicat
             function ()
                 m1.dw .+= m2.w .* out.dw
                 m2.dw .+= m1.w .* out.dw
+                out.dw[:,:] = 0 # clear
               end )
         end
     return out
