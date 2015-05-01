@@ -45,48 +45,39 @@ type LSTM <: Model
     hdlayers::Array{LSTMLayer,1} # holds variable number of hidden layers
     whd::NNMatrix # hidden to decoder weights & gradients
     bd::NNMatrix  # bias of hidden to decoder layer
+    matrices::Array{NNMatrix,1} # used by solver - holds references to each of matrices in model
     hiddensizes::Array{Int,1}
     function LSTM(inputsize::Int, hiddensizes::Array{Int,1}, outputsize::Int, std::FloatingPoint=0.08)
         hdlayers = Array(LSTMLayer, length(hiddensizes))
+        matrices = Array(NNMatrix, 0)
         for d in 1:length(hiddensizes)
             prevsize = d == 1? inputsize : hiddensizes[d-1]
             layer = LSTMLayer(prevsize, hiddensizes[d], std)
             hdlayers[d] = layer
+            # input gate
+            push!(matrices, layer.wix)
+            push!(matrices, layer.wih)
+            push!(matrices, layer.bi)
+            # forget gate
+            push!(matrices, layer.wfx)
+            push!(matrices, layer.wfh)
+            push!(matrices, layer.bf)
+            # output gate
+            push!(matrices, layer.wox)
+            push!(matrices, layer.woh)
+            push!(matrices, layer.bo)
+            # cell params
+            push!(matrices, layer.wcx)
+            push!(matrices, layer.wch)
+            push!(matrices, layer.bc)
         end
         whd = randNNMat(outputsize, hiddensizes[end], std)
         bd = NNMatrix(outputsize, 1, zeros(outputsize,1), zeros(outputsize,1))
+        push!(matrices, whd) # bias of hidden to hidden
+        push!(matrices, bd) # bias of hidden to hidden
 #         println("bh.w size($(size(bd.w)))")
-        new(hdlayers, whd, bd, hiddensizes)
+        new(hdlayers, whd, bd, matrices, hiddensizes)
     end
-end
-
-# this function does not exist in Andrej Karpathy's version.
-#  It has been added to allow the solver to collect and adjust all of the
-# matrices' weights without knowing the structure of any given model.
-function collectNNMat(model::LSTM)
-    modelNNMats = Array(NNMatrix,0)
-    for d in 1:length(model.hiddensizes)
-        layer = model.hdlayers[d]
-        # input gate
-        push!(modelNNMats, layer.wix)
-        push!(modelNNMats, layer.wih)
-        push!(modelNNMats, layer.bi)
-        # forget gate
-        push!(modelNNMats, layer.wfx)
-        push!(modelNNMats, layer.wfh)
-        push!(modelNNMats, layer.bf)
-        # output gate
-        push!(modelNNMats, layer.wox)
-        push!(modelNNMats, layer.woh)
-        push!(modelNNMats, layer.bo)
-        # cell params
-        push!(modelNNMats, layer.wcx)
-        push!(modelNNMats, layer.wch)
-        push!(modelNNMats, layer.bc)
-    end
-    push!(modelNNMats, model.whd) # bias of hidden to hidden
-    push!(modelNNMats, model.bd) # bias of hidden to hidden
-    return modelNNMats
 end
 
 function forwardprop(g::Graph, model::LSTM, x, prev)

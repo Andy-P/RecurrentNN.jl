@@ -14,35 +14,29 @@ type RNN <: Model
     hdlayers::Array{RNNLayer,1} # holds variable number of hidden layers
     whd::NNMatrix # hidden to decoder weights & gradients
     bd::NNMatrix  # bias of hidden to decoder layer
+    matrices::Array{NNMatrix,1} # used by solver - holds references to each of matrices in model
     hiddensizes::Array{Int,1}
     function RNN(inputsize::Int, hiddensizes::Array{Int,1}, outputsize::Int, std::FloatingPoint=0.08)
         hdlayers = Array(RNNLayer, length(hiddensizes))
+        matrices = Array(NNMatrix, 0)
         for d in 1:length(hiddensizes)
             prevsize = d == 1? inputsize : hiddensizes[d-1]
             layer = RNNLayer(prevsize, hiddensizes[d], std)
             hdlayers[d] = layer
+            # store a reference to all the matrices in each
+            push!(matrices, layer.wxh) # input (X or prev layer) to hidden weights & gradients
+            push!(matrices, layer.whh) # hidden to hidden weights & gradients
+            push!(matrices, layer.bhh) # bias of hidden to hidden
         end
         whd = randNNMat(outputsize, hiddensizes[end], std)
         bd = NNMatrix(outputsize, 1, zeros(outputsize,1), zeros(outputsize,1))
-#         println("bh.w size($(size(bd.w)))")
-        new(hdlayers, whd, bd, hiddensizes)
-    end
-end
 
-# this function does not exist in Andrej Karpathy's version.
-#  It has been added to allow the solver to collect and adjust all of the
-# matrices' weights without knowing the structure of any given model.
-function collectNNMat(model::RNN)
-    modelNNMats = Array(NNMatrix,0)
-    for d in 1:length(model.hiddensizes)
-        layer = model.hdlayers[d]
-        push!(modelNNMats, layer.wxh) # input (X or prev layer) to hidden weights & gradients
-        push!(modelNNMats, layer.whh) # hidden to hidden weights & gradients
-        push!(modelNNMats, layer.bhh) # bias of hidden to hidden
+        # store a reference to these matrices
+        push!(matrices, whd)
+        push!(matrices, bd)
+#         println("bh.w size($(size(bd.w)))")
+        new(hdlayers, whd, bd, matrices, hiddensizes)
     end
-    push!(modelNNMats, model.whd) # bias of hidden to hidden
-    push!(modelNNMats, model.bd) # bias of hidden to hidden
-    return modelNNMats
 end
 
 function forwardprop(g::Graph, model::RNN, x, prev)
