@@ -2,6 +2,7 @@ using RecurrentNN
 # reload("RecurrentNN.jl")
 # # global settings
 # const generator = "rnn" # can be 'rnn' or 'lstm'
+srand(12345)
 const generator = "lstm" # can be 'rnn' or 'lstm'
 const hiddensizes = [20,20] # list of sizes of hidden layers
 # const hiddensizes = [100] # uncomment to run full model
@@ -202,5 +203,8 @@ end
 maxIter =  50 # make this about 100_000 to run full model
 trgppl = 1.1 # stop if this perplexity score is reached
 while tickiter < maxIter && ppl > trgppl
+    model, wil, solver, tickiter, pplcurve, ppl = tick(model, wil, sents, solver, tickiter, pplcurve)
+end
+@time while tickiter < 2*maxIter && ppl > trgppl
     model, wil, solver, tickiter, pplcurve, ppl = tick(model, wil, sents, solver, tickiter, pplcurve)
 end
