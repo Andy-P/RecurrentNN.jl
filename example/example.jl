@@ -209,6 +209,7 @@ end
     model, wil, solver, tickiter, pplcurve, ppl = tick(model, wil, sents, solver, tickiter, pplcurve)
 end
 
+Profile.print(format=:flat)
 #using ProfileView
 #ProfileView.view()
 #readline()

@@ -93,12 +93,12 @@ function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
     if g.doBackprop
         push!(g.backprop,
             function ()
-                for i = 1:m1.n # m1's num row
+                @inbounds for i = 1:m1.n # m1's num row
                     for j = 1:m2.d # m2's num row
+                        b = out.dw[i,j]
                         for k = 1:m1.d # m1's num col
-                              @inbounds b = out.dw[i,j]
-                              @inbounds m1.dw[i,k] += m2.w[k,j] * b
-                              @inbounds m2.dw[k,j] += m1.w[i,k] * b
+                              m1.dw[i,k] += m2.w[k,j] * b
+                              m2.dw[k,j] += m1.w[i,k] * b
                           end
                       end
                   end
@@ -113,8 +113,10 @@ function add(g::Graph, m1::NNMatrix, m2::NNMatrix)
     if g.doBackprop
         push!(g.backprop,
             function ()
-                  m1.dw .+= out.dw
-                  m2.dw .+= out.dw
+                @inbounds for j in 1:m1.d, i in 1:m1.n
+                  m1.dw[i,j] += out.dw[i,j]
+                  m2.dw[i,j] += out.dw[i,j]
+                end
             end )
     end
     return out
@@ -127,8 +129,10 @@ function eltmul(g::Graph, m1::NNMatrix, m2::NNMatrix) # element-wise multiplicat
     if g.doBackprop
         push!(g.backprop,
             function ()
-                m1.dw .+= m2.w .* out.dw
-                m2.dw .+= m1.w .* out.dw
+                @inbounds for j in 1:m1.d, i in 1:m1.n
+                  m1.dw[i,j] += m2.w[i,j] * out.dw[i,j]
+                  m2.dw[i,j] += m1.w[i,j] * out.dw[i,j]
+                end
               end )
         end
     return out
