@@ -3,9 +3,9 @@ abstract Model # this is either an LSTM or RNN
 type NNMatrix # Neural net layer's weights & gradients
     n::Int
     d::Int
-    w::Array{Float64,2} # matix of weights
-    dw::Array{Float64,2} # matix of gtadients
-#     NNMatrix(n::Int) = new(n, 1, zeros(n,1), zeros(n,1))
+    w::Array # matix of weights
+    dw::Array # matix of gtadients
+    NNMatrix(n::Int) = new(n, 1, zeros(n), zeros(n))
     NNMatrix(n::Int, d::Int) = new(n, d, zeros(n,d), zeros(n,d))
     NNMatrix(n::Int, d::Int, w::Array, dw::Array) = new(n, d, w, dw)
 end
