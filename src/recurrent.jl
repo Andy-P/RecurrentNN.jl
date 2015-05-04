@@ -5,12 +5,12 @@ type NNMatrix # Neural net layer's weights & gradients
     d::Int
     w::Matrix{Float64} # matix of weights
     dw::Matrix{Float64} # matix of gtadients
-    NNMatrix(n::Int) = new(n, 1, zeros(n), zeros(n))
+    NNMatrix(n::Int) = new(n, 1, zeros(n,1), zeros(n,1))
     NNMatrix(n::Int, d::Int) = new(n, d, zeros(n,d), zeros(n,d))
     NNMatrix(n::Int, d::Int, w::Array, dw::Array) = new(n, d, w, dw)
 end
 
-randNNMat(n::Int, d::Int, std::FloatingPoint) = NNMatrix(n, d, randn(n,d)*std, zeros(n,d))
+randNNMat(n::Int, d::Int, std::FloatingPoint=1.) = NNMatrix(n, d, randn(n,d)*std, zeros(n,d))
 
 
 function softmax(m::NNMatrix)
