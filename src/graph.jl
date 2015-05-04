@@ -5,6 +5,10 @@ type Graph
    Graph(backPropNeeded::Bool) = new(Array(Function,0),backPropNeeded)
 end
 
+function backprop(g::Graph)
+    for i = length(g.backprop):-1:1  g.backprop[i]() end
+end
+
 function rowpluck(g::Graph, m::NNMatrix, ix::Int)
     # pluck a row of m and return it as a column vector
     out = NNMatrix(m.d, 1)
