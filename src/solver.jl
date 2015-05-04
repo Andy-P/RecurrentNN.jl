@@ -1,14 +1,14 @@
 type Solver
-   decayrate::FloatingPoint
-   smootheps::FloatingPoint
+   decayrate::Float64
+   smootheps::Float64
    stepcache::Array{NNMatrix,1}
    Solver() = new(0.999, 1e-8, Array(NNMatrix,0))
 end
 
-function step(solver::Solver, model::Model, stepsize::FloatingPoint, regc::FloatingPoint, clipval::FloatingPoint)
+function step(solver::Solver, model::Model, stepsize::Float64, regc::Float64, clipval::Float64)
 
     # perform parameter update
-    solverstats = Array(FloatingPoint,0)
+    solverstats = Array(Float64,0)
     numclipped = 0
     numtot = 0
 
