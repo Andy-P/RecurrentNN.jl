@@ -1,16 +1,16 @@
 using RecurrentNN
 # reload("RecurrentNN.jl")
+
 # # global settings
 # const generator = "rnn" # can be 'rnn' or 'lstm'
 srand(12345)
 const generator = "lstm" # can be 'rnn' or 'lstm'
-const hiddensizes = [20,20] # list of sizes of hidden layers
-# const hiddensizes = [100] # uncomment to run full model
-const lettersize = 5 # size of letter embeddings
+const hiddensizes = [100,100] # uncomment to run full model
+const lettersize = 7 # size of letter embeddings
 
 # optimization
 const regc = 0.000001 # L2 regularization strength
-const learning_rate = 0.01 # learning rate for rnn
+const learning_rate = 0.001 # Initial learning rate for lstm
 const clipval = 5.0 # clip gradients at this value
 
 function initVocab(inpath::String)
@@ -28,7 +28,6 @@ function initVocab(inpath::String)
         str = "$str $(s[1:end-1])"
     end
     vocab = sort(setdiff(unique(str),['\r','\n'])) # unique characters in data
-    # sents = [string(l[1:end-2]) for l in readlines(f)] #split(str,"\r\n") # array of sentences
     inputsize = length(vocab) + 1 # 1 additional token (zero) in used for beginning and end tokens
     outputsize = length(vocab) + 1
     epochsize = length(sents) # nmber of sentence in sample
@@ -65,7 +64,7 @@ wil, model = initModel(inputsize, lettersize, hiddensizes, outputsize)
 
 tickiter = 0
 
-ppl = Inf # perplexity will slowly move towards 0
+pplmedian = Inf # perplexity will slowly move towards 0
 pplcurve = Array(FloatingPoint,0) # track perplexity
 pplgraph = Dict{Int,FloatingPoint}() # track perplexity
 
@@ -110,7 +109,6 @@ function predictsentence(model::Model, wil::NNMatrix, samplei::Bool=false, temp:
         if ix-1 == 0 break end # END token predicted, break out
         if length(s) > max_chars_gen break end # something is wrong
 
-#         print
         letter = indexToLetter[ix-1]
         s = "$(s)$(letter)"
         cnt = cnt + 1
@@ -159,19 +157,20 @@ function costfunc(model:: Model, wil::NNMatrix, sent::String)
     return g, ppl, cost
 end
 
-function tick(model::Model, wil::NNMatrix, sents::Array, solver::Solver, tickiter::Int, pplcurve::Array{FloatingPoint,1})
+function tick(model::Model, wil::NNMatrix, sents::Array, solver::Solver, tickiter::Int, pplcurve::Array{FloatingPoint,1}, pplmedian)
 
     # sample sentence fromd data
 #     sent = sents[rand(1:21)] # use this if just kicking tires (faster)
-    sent = sents[rand(1:length(sents))] # switch to this for a proper model (8-12hrs)
+    sent = sents[rand(1:length(sents))] # switch to this for a proper model (1-3hrs)
 
     t1 = time_ns() # log start timestamp
 
     # evaluate cost function on a sentence
     g, ppl, cost = costfunc(model,wil, sent)
 
-    # use built up graph of backprop functions to compute backprop (set .dw fields in matirices)
-    for i = length(g.backprop):-1:1  g.backprop[i]() end
+    # use built up graph of backprop functions to compute backprop
+    # i.e. set .dw fields in matrices
+    backprop(g)
 
     # perform param update ( learning_rate, regc, clipval are global constants)
     solverstats = step(solver, model, learning_rate, regc, clipval)
@@ -189,27 +188,24 @@ function tick(model::Model, wil::NNMatrix, sents::Array, solver::Solver, tickite
         pplcurve = Array(FloatingPoint,0)
         # draw samples to see how we're doing
         for i =1:2
-            pred = predictsentence(model, wil, true, 1.0)
+            pred = predictsentence(model, wil, true, 0.7)
             println("   $(i). $pred ")
         end
         # greedy argmax (i.e if we were to select the most likely letter at each point)
         println("   Argmax: $(predictsentence(model, wil, false))")
     end
 
-    return model, wil, solver, tickiter, pplcurve, ppl
+    return model, wil, solver, tickiter, pplcurve, pplmedian
 end
 
 
-maxIter = 50 # make this about 100_000 to run full model
+maxIter = 100 # make this about 100_000 to run full model
 trgppl = 1.1 # stop if this perplexity score is reached
-while tickiter < maxIter && ppl > trgppl
-    model, wil, solver, tickiter, pplcurve, ppl = tick(model, wil, sents, solver, tickiter, pplcurve)
-end
-@time while tickiter < 2*maxIter && ppl > trgppl
-    model, wil, solver, tickiter, pplcurve, ppl = tick(model, wil, sents, solver, tickiter, pplcurve)
+@time while tickiter < maxIter && ppl > trgppl
+    model, wil, solver, tickiter, pplcurve, pplmedian = tick(model, wil, sents, solver, tickiter, pplcurve, pplmedian)
 end
 
-Profile.print(format=:flat)
+# Profile.print(format=:flat)
 #using ProfileView
 #ProfileView.view()
 #readline()
