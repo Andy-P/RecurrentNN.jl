@@ -5,7 +5,7 @@ using RecurrentNN
 # const generator = "rnn" # can be 'rnn' or 'lstm'
 srand(12345)
 const generator = "lstm" # can be 'rnn' or 'lstm'
-const hiddensizes = [100,100] # uncomment to run full model
+const hiddensizes = [100,100]
 const lettersize = 7 # size of letter embeddings
 
 # optimization
@@ -63,10 +63,8 @@ sents, vocab, letterToIndex, indexToLetter, inputsize, outputsize, epochsize =
 wil, model = initModel(inputsize, lettersize, hiddensizes, outputsize)
 
 tickiter = 0
-
 pplmedian = Inf # perplexity will slowly move towards 0
 pplcurve = Array(FloatingPoint,0) # track perplexity
-pplgraph = Dict{Int,FloatingPoint}() # track perplexity
 
 #########################################
 #             run the model             #
@@ -88,7 +86,7 @@ function predictsentence(model::Model, wil::NNMatrix, samplei::Bool=false, temp:
         ix = length(s) == 0 ? 0 : letterToIndex[s[end]]
         x = rowpluck(g, wil, ix+1) # get letter's embedding (vector)
 
-        # returns a 2-tuple (RNN) or 3-tuples (LSTM). Last part is always outputNNMatrix
+        # returns a 2-tuple (RNN) or 3-tuple (LSTM). Last part is always outputNNMatrix
         prev = forwardprop(g, model, x, prev)
 
         # sample predicted letter
@@ -184,8 +182,7 @@ function tick(model::Model, wil::NNMatrix, sents::Array, solver::Solver, tickite
     if tickiter % 50 == 0 # output sample sentences every Xth iteration
         pplmedian = round(median(pplcurve),4)
         println("Perplexity = $(pplmedian) @ $tickiter")
-        pplgraph[tickiter] = pplmedian
-        pplcurve = Array(FloatingPoint,0)
+        push!(pplcurve, pplmedian)
         # draw samples to see how we're doing
         for i =1:2
             pred = predictsentence(model, wil, true, 0.7)
@@ -198,10 +195,9 @@ function tick(model::Model, wil::NNMatrix, sents::Array, solver::Solver, tickite
     return model, wil, solver, tickiter, pplcurve, pplmedian
 end
 
-
 maxIter = 100 # make this about 100_000 to run full model
 trgppl = 1.1 # stop if this perplexity score is reached
-@time while tickiter < maxIter && ppl > trgppl
+@time while tickiter < maxIter && pplmedian > trgppl
     model, wil, solver, tickiter, pplcurve, pplmedian = tick(model, wil, sents, solver, tickiter, pplcurve, pplmedian)
 end
 
