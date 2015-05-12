@@ -15,7 +15,7 @@ type LSTMLayer # a single layer of a multi-layer RNN
         wcx::NNMatrix
         wch::NNMatrix
         bc::NNMatrix
-    function LSTMLayer(prevsize::Int, hiddensize::Int, std::FloatingPoint)
+    function LSTMLayer(prevsize::Int, hiddensize::Int, std::Float64)
         ###  gate parameters ###
         # cell's input gate params
         wix = randNNMat(hiddensize, prevsize, std)
@@ -47,7 +47,7 @@ type LSTM <: Model
     bd::NNMatrix  # bias of hidden to decoder layer
     matrices::Array{NNMatrix,1} # used by solver - holds references to each of matrices in model
     hiddensizes::Array{Int,1}
-    function LSTM(inputsize::Int, hiddensizes::Array{Int,1}, outputsize::Int, std::FloatingPoint=0.08)
+    function LSTM(inputsize::Int, hiddensizes::Array{Int,1}, outputsize::Int, std::Float64=0.08)
         hdlayers = Array(LSTMLayer, length(hiddensizes))
         matrices = Array(NNMatrix, 0)
         for d in 1:length(hiddensizes)

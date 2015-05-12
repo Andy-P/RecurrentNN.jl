@@ -2,7 +2,7 @@ type RNNLayer # a single layer of a multi-layer RNN
     wxh::NNMatrix # input (X or prev layer) to hidden weights & gradients
     whh::NNMatrix # hidden to hidden weights & gradients
     bhh::NNMatrix # bias of hidden to hidden
-    function RNNLayer(prevsize::Int, hiddensize::Int, std::FloatingPoint)
+    function RNNLayer(prevsize::Int, hiddensize::Int, std::Float64)
         wxh = randNNMat(hiddensize, prevsize, std)
         whh = randNNMat(hiddensize, hiddensize, std)
         wbh = NNMatrix(hiddensize, 1, zeros(hiddensize,1), zeros(hiddensize,1))
@@ -16,7 +16,7 @@ type RNN <: Model
     bd::NNMatrix  # bias of hidden to decoder layer
     matrices::Array{NNMatrix,1} # used by solver - holds references to each of matrices in model
     hiddensizes::Array{Int,1}
-    function RNN(inputsize::Int, hiddensizes::Array{Int,1}, outputsize::Int, std::FloatingPoint=0.08)
+    function RNN(inputsize::Int, hiddensizes::Array{Int,1}, outputsize::Int, std::Float64=0.08)
         hdlayers = Array(RNNLayer, length(hiddensizes))
         matrices = Array(NNMatrix, 0)
         for d in 1:length(hiddensizes)
