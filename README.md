@@ -50,8 +50,7 @@ outMat =  prev[end]
 # so the output of the LSTM are the log probabilities of the
 # two classes. Lets first get the probabilities:
 probs = softmax(outMat)
-ix_target = 1 # suppose first input has class 0
-cost += -log(probs.w[ix_target])
+ix_target = 1 # suppose first input has target class
 
 # cross-entropy loss for softmax is simply the probabilities:
 outMat.dw = prob1.w
