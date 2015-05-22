@@ -74,7 +74,7 @@ s = Solver() # RMSProp optimizer
 step(s, lstm, 0.01, 0.00001, 5.0);
 ```
 
-A much more detailed example similar to Karpathy's can be found in the example folder.
+A much more detailed example can be found in the example folder.
 
 ## Warning: Beta
 Tests using the example from Karpathy's library show similar results but the code needs to be more thoroughly tested.
