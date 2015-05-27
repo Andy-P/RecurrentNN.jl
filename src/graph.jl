@@ -38,7 +38,7 @@ end
 
 function sigmoid(g::Graph, m::NNMatrix)
     out = NNMatrix(m.n, m.d,
-            [1.0 / (1.0 + exp(-m.w[i,j])) for i in 1:m.n, j in m.d],
+            [1.0 / (1.0 + exp(-m.w[i,j])) for i in 1:m.n, j in 1:m.d],
             zeros(m.n, m.d))
     if g.doBackprop
         push!(g.backprop,
@@ -112,4 +112,3 @@ function eltmul(g::Graph, m1::NNMatrix, m2::NNMatrix) # element-wise multiplicat
         end
     return out
 end
-
