@@ -86,7 +86,7 @@ function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
 end
 
 function add(g::Graph, m1::NNMatrix, m2::NNMatrix)
-    out = NNMatrix(m1.n, m1.d, m1.w + m2.w, zeros(m1.n, m1.d))
+    out = NNMatrix(m1.n, m1.d, m1.w .+ m2.w, zeros(m1.n, m1.d))
     if g.doBackprop
         push!(g.backprop,
             function ()
