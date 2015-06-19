@@ -85,6 +85,17 @@ function mul(g::Graph, m1::NNMatrix, m2::NNMatrix)
     return out
 end
 
+function mul(g::Graph, m::NNMatrix, c::Float64)
+    out = NNMatrix(m.n, m.d, m.w .* c, zeros(m.n, m.d))
+    if g.doBackprop
+        push!(g.backprop,
+            function ()
+                m.dw += out.dw .* c
+            end )
+    end
+    return out
+end
+
 function add(g::Graph, m1::NNMatrix, m2::NNMatrix)
     out = NNMatrix(m1.n, m1.d, m1.w .+ m2.w, zeros(m1.n, m1.d))
     if g.doBackprop
@@ -94,6 +105,17 @@ function add(g::Graph, m1::NNMatrix, m2::NNMatrix)
                   m1.dw[i,j] += out.dw[i,j]
                   m2.dw[i,j] += out.dw[i,j]
                 end
+            end )
+    end
+    return out
+end
+
+function add(g::Graph, m::NNMatrix, c::Float64)
+    out = NNMatrix(m.n, m.d, m.w .+ c, zeros(m.n, m.d))
+    if g.doBackprop
+        push!(g.backprop,
+            function ()
+                m.dw += out.dw
             end )
     end
     return out
