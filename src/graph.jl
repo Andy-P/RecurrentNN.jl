@@ -22,6 +22,34 @@ function rowpluck(g::Graph, m::NNMatrix, ix::Int)
     return out
 end
 
+function concat(g::Graph, ms::NNMatrix...)
+    n = 0
+    for i in 1:length(ms)
+        n += ms[i].n
+    end
+    out = NNMatrix(n, ms[1].d, zeros(n, ms[1].d), zeros(n, ms[1].d))
+    n = 0
+    for m in ms
+        for j = 1:m.d, i = 1:m.n
+            out.w[i+n,j] = m.w[i,j]
+        end
+        n += m.n
+    end
+    if g.doBackprop
+        push!(g.backprop,
+              function ()
+                  n = 0
+                  for m in ms
+                      for j = 1:m.d, i = 1:m.n
+                          m.dw[i,j] += out.dw[i+n,j]
+                      end
+                      n += m.n
+                  end
+              end )
+    end
+    return out
+end
+
 function tanh(g::Graph, m::NNMatrix)
     out = NNMatrix(m.n, m.d)
     out.w = tanh(m.w)
@@ -96,14 +124,20 @@ function mul(g::Graph, m::NNMatrix, c::Float64)
     return out
 end
 
-function add(g::Graph, m1::NNMatrix, m2::NNMatrix)
-    out = NNMatrix(m1.n, m1.d, m1.w .+ m2.w, zeros(m1.n, m1.d))
+function add(g::Graph, ms::NNMatrix...)
+    out = NNMatrix(ms[1].n, ms[1].d, zeros(ms[1].n, ms[1].d), zeros(ms[1].n, ms[1].d))
+    @inbounds for m in ms
+        @inbounds for j in 1:m.d, i in 1:m.n
+            out.w[i,j] += m.w[i,j]
+        end
+    end
     if g.doBackprop
         push!(g.backprop,
             function ()
-                @inbounds for j in 1:m1.d, i in 1:m1.n
-                  m1.dw[i,j] += out.dw[i,j]
-                  m2.dw[i,j] += out.dw[i,j]
+                @inbounds for m in ms
+                    @inbounds for j in 1:m.d, i in 1:m.n
+                        m.dw[i,j] += out.dw[i,j]
+                    end
                 end
             end )
     end
