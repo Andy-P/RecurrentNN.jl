@@ -24,12 +24,12 @@ end
 
 function concat(g::Graph, ms::NNMatrix...)
     n = 0
-    for i in 1:length(ms)
+    @inbounds for i in 1:length(ms)
         n += ms[i].n
     end
     out = NNMatrix(n, ms[1].d, zeros(n, ms[1].d), zeros(n, ms[1].d))
     n = 0
-    for m in ms
+    @inbounds for m in ms
         for j = 1:m.d, i = 1:m.n
             out.w[i+n,j] = m.w[i,j]
         end
@@ -39,8 +39,8 @@ function concat(g::Graph, ms::NNMatrix...)
         push!(g.backprop,
               function ()
                   n = 0
-                  for m in ms
-                      for j = 1:m.d, i = 1:m.n
+                  @inbounds for m in ms
+                      @inbounds for j = 1:m.d, i = 1:m.n
                           m.dw[i,j] += out.dw[i+n,j]
                       end
                       n += m.n
