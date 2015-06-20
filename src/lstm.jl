@@ -128,22 +128,22 @@ function forwardprop(g::Graph, model::LSTM, x, prev)
         # input gate
         h0 = mul(g, wix, input)
         h1 = mul(g, wih, hdprev)
-        inputgate = sigmoid(g, add(g, add(g, h0,h1), bi))
+        inputgate = sigmoid(g, add(g, h0, h1, bi))
 
         # forget gate
         h2 = mul(g, wfx, input)
         h3 = mul(g, wfh, hdprev)
-        forgetgate = sigmoid(g, add(g, add(g, h2, h3), bf))
+        forgetgate = sigmoid(g, add(g, h2, h3, bf))
 
         # output gate
         h4 =mul(g, wox, input)
         h5 = mul(g, woh, hdprev)
-        outputgate = sigmoid(g, add(g, add(g, h4, h5), bo))
+        outputgate = sigmoid(g, add(g, h4, h5, bo))
 
         # write operation on cells
         h6 = mul(g, wcx, input)
         h7 = mul(g, wch, hdprev)
-        cellwrite = tanh(g, add(g, add(g, h6, h7),bc))
+        cellwrite = tanh(g, add(g, h6, h7, bc))
 
         # compute new cell activation
         retaincell = eltmul(g, forgetgate, cellprev) # what do we keep from cell

@@ -108,17 +108,17 @@ function forwardprop(g::Graph, model::GRU, x, prev)
         # update gate
         h0 = mul(g, wux, input)
         h1 = mul(g, wuh, hdprev)
-        updategate = sigmoid(g, add(g, add(g, h0,h1), bu))
+        updategate = sigmoid(g, add(g, h0, h1, bu))
 
         # reset gate
         h2 = mul(g, wrx, input)
         h3 = mul(g, wrh, hdprev)
-        resetgate = sigmoid(g, add(g, add(g, h2, h3), br))
+        resetgate = sigmoid(g, add(g, h2, h3, br))
 
         # candidate
         p1 = mul(g, wcx, input)
         p2 = mul(g, wch, eltmul(g, resetgate, hdprev))
-        candidate = tanh(g, add(g, add(g, p1, p2), bc))
+        candidate = tanh(g, add(g, p1, p2, bc))
 
         # compute hidden state
         ones = onesNNMat(updategate.n, updategate.d)
