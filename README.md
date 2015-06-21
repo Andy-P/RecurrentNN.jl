@@ -83,7 +83,7 @@ step(s, lstm, 0.01, 0.00001, 5.0);
 A much more detailed example can be found in the example folder.
 
 ##Credits
-This library draws on the work of [Andrej Karpathy](https://github.com/karpathy). Speed enhancements were added by [Iain Dunning](https://github.com/IainNZ). The Gated Recurrent Neural Network implementation was added by [Paul Heideman](https://github.com/paulheideman).
+This library draws on the work of [Andrej Karpathy](https://github.com/karpathy). Speed enhancements were added by [Iain Dunning](https://github.com/IainNZ). The Gated Recurrent Neural Network implementation and Gated Feedback variants were added by [Paul Heideman](https://github.com/paulheideman).
 
 ## License
 MIT
