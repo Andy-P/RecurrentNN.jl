@@ -1,9 +1,11 @@
 # RecurrentNN.jl
 
-RecurrentNN.jl is a Julia language package based on Andrej Karpathy's excellent [RecurrentJS](http://cs.stanford.edu/people/karpathy/recurrentjs) library in javascript. As per the original it implements:
+RecurrentNN.jl is a Julia language package originally based on Andrej Karpathy's excellent [RecurrentJS](http://cs.stanford.edu/people/karpathy/recurrentjs) library in javascript.
+It implements:
 
 - Deep **Recurrent Neural Networks** (RNN)
 - **Long Short-Term Memory networks** (LSTM)
+- **Gated Recurrent Neural Networks** (GRU)
 - In fact, the library is more general because it has functionality to construct arbitrary **expression graphs** over which the library can perform **automatic differentiation** similar to what you may find in Theano for Python, or in Torch etc. Currently, the code uses this very general functionality to implement RNN/LSTM, but one can build arbitrary Neural Networks and do automatic backprop.
 
 ## Online demo of original library in javascript
@@ -74,9 +76,6 @@ step(s, lstm, 0.01, 0.00001, 5.0);
 ```
 
 A much more detailed example can be found in the example folder.
-
-## Warning: Beta
-Tests using the example from Karpathy's library show similar results but the code needs to be more thoroughly tested.
 
 ## License
 MIT
