@@ -6,7 +6,7 @@ It implements:
 - Deep **Recurrent Neural Networks** (RNN)
 - **Long Short-Term Memory networks** (LSTM)
 - **Gated Recurrent Neural Networks** (GRU)
-- In fact, the library is more general because it has functionality to construct arbitrary **expression graphs** over which the library can perform **automatic differentiation** similar to what you may find in Theano for Python, or in Torch etc. Currently, the code uses this very general functionality to implement RNN/LSTM, but one can build arbitrary Neural Networks and do automatic backprop.
+- In fact, the library is more general because it has functionality to construct arbitrary **expression graphs** over which the library can perform **automatic differentiation** similar to what you may find in Theano for Python, or in Torch etc. Currently, the code uses this very general functionality to implement RNN/LSTM/GRU, but one can build arbitrary Neural Networks and do automatic backprop.
 
 ## Online demo of original library in javascript
 
@@ -14,7 +14,7 @@ An online demo that memorizes character sequences can be found below. Sentences 
 
 [Character Sequence Memorization Demo](http://cs.stanford.edu/people/karpathy/recurrentjs)
 
-The same demo as above implemented in Julia can be found in example/example.jl
+*The same demo as above implemented in Julia can be found in* [example/example.jl](https://github.com/Andy-P/RecurrentNN.jl/blob/master/example/example.jl)
 
 ## Example code
 
@@ -76,6 +76,9 @@ step(s, lstm, 0.01, 0.00001, 5.0);
 ```
 
 A much more detailed example can be found in the example folder.
+
+##Credits
+This library draws on the work of [Andrej Karpathy](https://github.com/karpathy). Speed enhancements were added by [Iain Dunning](https://github.com/IainNZ). The Gated Recurrent Neural Network implementation was added by [Paul Heideman](https://github.com/paulheideman).
 
 ## License
 MIT
