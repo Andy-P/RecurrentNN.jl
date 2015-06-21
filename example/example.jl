@@ -4,7 +4,7 @@ using RecurrentNN
 # # global settings
 # const generator = "rnn" # can be 'rnn' or 'lstm'
 srand(12345)
-const generator = "lstm" # can be 'rnn' or 'lstm'
+const generator = "gru" # can be 'rnn' or 'lstm' or 'gru' or 'gflstm' or 'gfgru'
 const hiddensizes = [100,100]
 const lettersize = 7 # size of letter embeddings
 
@@ -43,8 +43,17 @@ end
 
 function initModel(inputsize::Int, lettersize::Int, hiddensizes::Array{Int,1},outputsize::Int)
     wil = randNNMat(inputsize,lettersize,0.08)
-    nn = generator == "rnn"? RNN(lettersize,hiddensizes,outputsize):
+    nn = if generator == "rnn"
+        RNN(lettersize,hiddensizes,outputsize)
+    elseif generator == "gru"
+        GRU(lettersize,hiddensizes,outputsize)
+    elseif generator == "lstm"
         LSTM(lettersize,hiddensizes,outputsize)
+    elseif generator == "gflstm"
+        GFLSTM(lettersize,hiddensizes,outputsize)
+    else
+        GFGRU(lettersize,hiddensizes,outputsize)
+    end
     # println((typeof(wil),typeof(nn)))
     return wil, nn
 end

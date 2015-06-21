@@ -1,4 +1,6 @@
-type LSTMLayer # a single layer of a multi-layer RNN
+# Gated-Feedback LSTM
+
+type GFLSTMLayer # a single layer of a multi-layer RNN
         # cell's input gate params
         wix::NNMatrix
         wih::NNMatrix
@@ -13,11 +15,16 @@ type LSTMLayer # a single layer of a multi-layer RNN
         bo::NNMatrix
         # cell's write parameters
         wcx::NNMatrix
-        wch::NNMatrix
+        wgh::Array{NNMatrix, 1}
+        wch::Array{NNMatrix, 1}
+        wgx::Array{NNMatrix, 1}
+        bg::Array{NNMatrix, 1}
         bc::NNMatrix
-    function LSTMLayer(prevsize::Int, hiddensize::Int, std::Float64)
+    function GFLSTMLayer(prevsize::Int, hiddensizes::Array{Int, 1}, layer::Int, std::Float64)
         ###  gate parameters ###
         # cell's input gate params
+        hiddensize = hiddensizes[layer]
+        totalsize = sum(hiddensizes)
         wix = randNNMat(hiddensize, prevsize, std)
         wih = randNNMat(hiddensize, hiddensize, std)
         bi = NNMatrix(hiddensize, 1, zeros(hiddensize,1), zeros(hiddensize,1))
@@ -34,25 +41,35 @@ type LSTMLayer # a single layer of a multi-layer RNN
 
         ### cell's write parameters ###
         wcx = randNNMat(hiddensize, prevsize, std)
-        wch = randNNMat(hiddensize, hiddensize, std)
+        layers = length(hiddensizes)
+        wgx = Array(NNMatrix, layers)
+        wgh = Array(NNMatrix, layers)
+        wch = Array(NNMatrix, layers)
+        bg = Array(NNMatrix, layers)
+        for d in 1:layers
+            wgh[d] = randNNMat(hiddensize, totalsize, std)
+            wch[d] = randNNMat(hiddensize, hiddensize, std)
+            wgx[d] = randNNMat(hiddensize, prevsize, std)
+            bg[d] = NNMatrix(hiddensize, 1, zeros(hiddensize,1), zeros(hiddensize,1))
+        end
         bc = NNMatrix(hiddensize, 1, zeros(hiddensize,1), zeros(hiddensize,1))
 
-        new(wix,wih,bi,　wfx,wfh,bf,　wox,woh,bo,　wcx,wch,bc)
+        new(wix,wih,bi,　wfx,wfh,bf,　wox,woh,bo,　wcx,wgh,wch,wgx,bg,bc)
     end
 end
 
-type LSTM <: Model
-    hdlayers::Array{LSTMLayer,1} # holds variable number of hidden layers
+type GFLSTM <: Model
+    hdlayers::Array{GFLSTMLayer,1} # holds variable number of hidden layers
     whd::NNMatrix # hidden to decoder weights & gradients
     bd::NNMatrix  # bias of hidden to decoder layer
     matrices::Array{NNMatrix,1} # used by solver - holds references to each of matrices in model
-    hiddensizes::Array{Int,1}
-    function LSTM(inputsize::Int, hiddensizes::Array{Int,1}, outputsize::Int, std::Float64=0.08)
-        hdlayers = Array(LSTMLayer, length(hiddensizes))
+    hiddensizes::Array{Int, 1}
+    function GFLSTM(inputsize::Int, hiddensizes::Array{Int, 1}, outputsize::Int, std::Float64=0.08)
+        hdlayers = Array(GFLSTMLayer, length(hiddensizes))
         matrices = Array(NNMatrix, 0)
         for d in 1:length(hiddensizes)
             prevsize = d == 1? inputsize : hiddensizes[d-1]
-            layer = LSTMLayer(prevsize, hiddensizes[d], std)
+            layer = GFLSTMLayer(prevsize, hiddensizes, d, std)
             hdlayers[d] = layer
             # input gate
             push!(matrices, layer.wix)
@@ -68,7 +85,12 @@ type LSTM <: Model
             push!(matrices, layer.bo)
             # cell params
             push!(matrices, layer.wcx)
-            push!(matrices, layer.wch)
+            for d2 in 1:length(hiddensizes)
+                push!(matrices, layer.wgh[d2])
+                push!(matrices, layer.wch[d2])
+                push!(matrices, layer.wgx[d2])
+                push!(matrices, layer.bg[d2])
+            end
             push!(matrices, layer.bc)
         end
         whd = randNNMat(outputsize, hiddensizes[end], std)
@@ -80,11 +102,11 @@ type LSTM <: Model
     end
 end
 
-function forwardprop(g::Graph, model::LSTM, x, prev)
+function forwardprop(g::Graph, model::GFLSTM, x, prev)
 
-    # forward prop for a single tick of LSTM
+    # forward prop for a single tick of Gated Feedback LSTM
     # g is graph to append ops to
-    # model contains LSTM parameters
+    # model contains GFLSTM parameters
     # x is 1D column vector with observation
     # prev is a struct containing hidden and cell from previous iteration
 
@@ -103,8 +125,9 @@ function forwardprop(g::Graph, model::LSTM, x, prev)
 
     hidden = Array(NNMatrix,0)
     cell = Array(NNMatrix,0)
-    for d in 1:length(model.hiddensizes) # for each hidden layer
-
+    hstar = concat(g, hiddenprevs...)
+    layers = length(model.hiddensizes)
+    for d in 1:layers
         input = d == 1 ? x : hidden[d-1]
         hdprev = hiddenprevs[d]
         cellprev = cellprevs[d]
@@ -122,7 +145,10 @@ function forwardprop(g::Graph, model::LSTM, x, prev)
         bo = model.hdlayers[d].bo
         # cell's write parameters
         wcx = model.hdlayers[d].wcx
+        wgh = model.hdlayers[d].wgh
+        wgx = model.hdlayers[d].wgx
         wch = model.hdlayers[d].wch
+        bg = model.hdlayers[d].bg
         bc = model.hdlayers[d].bc
 
         # input gate
@@ -140,10 +166,22 @@ function forwardprop(g::Graph, model::LSTM, x, prev)
         h5 = mul(g, woh, hdprev)
         outputgate = sigmoid(g, add(g, h4, h5, bo))
 
+        # global reset gates
+        gr = Array(NNMatrix, layers)
+        @inbounds for gd in 1:layers
+            hg = mul(g, wgx[gd], input)
+            hu = mul(g, wgh[gd], hstar)
+            gr[gd] = sigmoid(g, add(g, hg, hu, bg[gd]))
+        end
+
         # write operation on cells
         h6 = mul(g, wcx, input)
-        h7 = mul(g, wch, hdprev)
-        cellwrite = tanh(g, add(g, h6, h7, bc))
+        h = Array(NNMatrix, layers)
+        @inbounds for hd in 1:layers
+            hi = mul(g, wch[hd], hiddenprevs[hd])
+            h[hd] = eltmul(g, gr[hd], hi)
+        end
+        cellwrite = tanh(g, add(g, h6, bc, h...))
 
         # compute new cell activation
         retaincell = eltmul(g, forgetgate, cellprev) # what do we keep from cell
