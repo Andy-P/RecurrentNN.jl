@@ -6,7 +6,11 @@ It implements:
 - Deep **Recurrent Neural Networks** (RNN)
 - **Long Short-Term Memory networks** (LSTM)
 - **Gated Recurrent Neural Networks** (GRU)
+- **Gated Feedback Recurrent Neural Networks** (GF-RNN)
+- **Gated Feedback Long Short-Term Memory networks** (GF-LSTM)
 - In fact, the library is more general because it has functionality to construct arbitrary **expression graphs** over which the library can perform **automatic differentiation** similar to what you may find in Theano for Python, or in Torch etc. Currently, the code uses this very general functionality to implement RNN/LSTM/GRU, but one can build arbitrary Neural Networks and do automatic backprop.
+- For information an the **Gated Feedback** variants see [Gated Feedback Recurrent Neural Networks](http://arxiv.org/abs/1502.02367) 
+
 
 ## Online demo of original library in javascript
 
@@ -15,6 +19,7 @@ An online demo that memorizes character sequences can be found below. Sentences 
 [Character Sequence Memorization Demo](http://cs.stanford.edu/people/karpathy/recurrentjs)
 
 *The same demo as above implemented in Julia can be found in* [example/example.jl](https://github.com/Andy-P/RecurrentNN.jl/blob/master/example/example.jl)
+
 
 ## Example code
 
