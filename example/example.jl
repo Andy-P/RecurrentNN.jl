@@ -4,7 +4,7 @@ using RecurrentNN
 # # global settings
 # const generator = "rnn" # can be 'rnn' or 'lstm'
 srand(12345)
-const generator = "gru" # can be 'rnn' or 'lstm' or 'gru' or 'gflstm' or 'gfgru'
+const generator = "lstm" # can be 'rnn' or 'lstm' or 'gru' or 'gflstm' or 'gfgru'
 const hiddensizes = [100,100]
 const lettersize = 7 # size of letter embeddings
 
