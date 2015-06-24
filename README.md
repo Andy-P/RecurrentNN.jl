@@ -60,7 +60,7 @@ probs = softmax(outMat)
 ix_target = 1 # suppose first input has target class
 
 # cross-entropy loss for softmax is simply the probabilities:
-outMat.dw = prob1.w
+outMat.dw = probs.w
 # but the correct class gets an extra -1:
 outMat.dw[ix_target] -= 1;
 
