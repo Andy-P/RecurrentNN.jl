@@ -6,6 +6,7 @@ export NNMatrix, randNNMat, forwardprop, softmax, Solver, step
 export Graph, backprop, rowpluck
 
 include("recurrent.jl")
+include("mixturemodel.jl")
 include("graph.jl")
 include("solver.jl")
 include("rnn.jl")
