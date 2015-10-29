@@ -21,10 +21,19 @@ function updateCoeff!(mdn::MixtureDensityNetwork, m::NNMatrix)
     mdn.π[:] /= sum(mdn.π[:])
 
     for i = 1:n
-        mdn.μ[i] = m.w[i+n,1]
-        mdn.σ[i] = exp(m.w[i+n*2,1])
+        mdn.μ[i] = m.w[i+n,1] # means
+        mdn.σ[i] = exp(m.w[i+n*2,1]) # variances
     end
     return mdn
+end
+
+function error(mdn::MixtureDensityNetwork, y::AbstractFloat)
+    n = mdn.n
+    ŷ = 0
+    for i in 1:n
+        ŷ += mdn.π[i] * normal(y, mdn.μ[i+n], mdn.σ[i+2*n])
+    end
+    return -log(ŷ)
 end
 
 function forward!(mdn::MixtureDensityNetwork, m::NNMatrix)
