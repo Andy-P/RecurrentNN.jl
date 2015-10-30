@@ -4,6 +4,7 @@ import Base.tanh
 export Model, RNN, LSTM, GRU, GFLSTM, GFGRU
 export NNMatrix, randNNMat, forwardprop, softmax, Solver, step
 export Graph, backprop, rowpluck
+export MixtureDensityNetwork, updateCoeff!, calcGradients!
 
 include("recurrent.jl")
 include("mixturemodel.jl")

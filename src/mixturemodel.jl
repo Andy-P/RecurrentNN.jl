@@ -1,4 +1,4 @@
-# Normal probability distribution
+# Normal probability density function
 const sqrt2PiInv = 1 / sqrt(2*π)
 normalpdf(y, μ, σ) =  sqrt2PiInv * exp(-(y-μ)^2 / 2σ^2) /  σ
 
@@ -24,19 +24,42 @@ function updateCoeff!(mdn::MixtureDensityNetwork, m::NNMatrix)
         mdn.μ[i] = m.w[i+n,1] # means
         mdn.σ[i] = exp(m.w[i+n*2,1]) # variances
     end
-    return mdn
+    return
 end
 
-function error(mdn::MixtureDensityNetwork, y::AbstractFloat)
+
+function calcGamma(mdn::MixtureDensityNetwork, y::AbstractFloat)
     n = mdn.n
-    ŷ = 0
+    γ = zeros(n);
+    Σγ  = 0.
     for i in 1:n
-        ŷ += mdn.π[i] * normal(y, mdn.μ[i+n], mdn.σ[i+2*n])
+        γ[i] = mdn.π[i] * normalpdf(y, mdn.μ[i], mdn.σ[i])
+        Σγ += γ[i] # sum of γ (used for normalization and log error calc)
     end
-    return -log(ŷ)
+    γ /= Σγ    # normalized gamma
+    ε = -log(Σγ)  # log error
+    return γ, ε
 end
 
-function forward!(mdn::MixtureDensityNetwork, m::NNMatrix)
+
+function calcGradients!(mdn::MixtureDensityNetwork, m::NNMatrix, y::AbstractFloat)
+
+    γ, ε = calcGamma(mdn, y)
+    # calc and assign gradients
+    n = mdn.n
+    for i = 1:n
+        μ = mdn.μ[i]
+        σ = mdn.σ[i]
+        m.dw[i]     =  mdn.π[i] - γ[i]        # ∂ε/∂m.π
+        m.dw[i+n]   =  γ[i]*((μ-y)/(σ^2))     # ∂ε/∂m.μ
+        m.dw[i+n*2] = -γ[i]*((y-μ)^2/(σ^2)-1) # dε/∂m.σ
+    end
+#     println((m.dw'))
+    return ε
+end
+
+
+function update!(mdn::MixtureDensityNetwork, m::NNMatrix, y::AbstractFloat)
 
 
 
