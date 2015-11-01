@@ -12,6 +12,7 @@ type MixtureDensityNetwork
     end
 end
 
+
 function updateCoeff!(mdn::MixtureDensityNetwork, m::NNMatrix)
 
     # calculate softmax to get mixture weights
@@ -43,7 +44,6 @@ end
 
 
 function calcGradients!(mdn::MixtureDensityNetwork, m::NNMatrix, y::AbstractFloat)
-
     γ, ε = calcGamma(mdn, y)
     # calc and assign gradients
     n = mdn.n
@@ -59,10 +59,12 @@ function calcGradients!(mdn::MixtureDensityNetwork, m::NNMatrix, y::AbstractFloa
 end
 
 
-function update!(mdn::MixtureDensityNetwork, m::NNMatrix, y::AbstractFloat)
-
-
-
+function mean(mdn::MixtureDensityNetwork)
+    μ = 0.
+    for i =1:mdn.n
+        μ = mdn.π[i] * mdn.μ[i]
+    end
+    return μ
 end
 
 
