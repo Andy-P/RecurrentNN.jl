@@ -19,8 +19,7 @@ function updateCoeff!(mdn::MixtureDensityNetwork, m::NNMatrix)
     n = mdn.n
     maxval = maximum(m.w[1:n,1])
     mdn.π[:] = exp(m.w[1:n,1] - maxval)
-    mdn.π[:] /= sum(mdn.π[:])
-
+    mdn.π[:] /= sum(mdn.π)
     for i = 1:n
         mdn.μ[i] = m.w[i+n,1] # means
         mdn.σ[i] = exp(m.w[i+n*2,1]) # variances
@@ -52,21 +51,30 @@ function calcGradients!(mdn::MixtureDensityNetwork, m::NNMatrix, y::AbstractFloa
         σ = mdn.σ[i]
         m.dw[i]     =  mdn.π[i] - γ[i]        # ∂ε/∂m.π
         m.dw[i+n]   =  γ[i]*((μ-y)/(σ^2))     # ∂ε/∂m.μ
+#         m.dw[i+n] = γ[i]*((μ-y)/(σ*σ))
         m.dw[i+n*2] = -γ[i]*((y-μ)^2/(σ^2)-1) # dε/∂m.σ
+#         m.dw[i+n*2] = -γ[i]*((y-μ)*(y-μ)/(σ*σ)-1)
     end
 #     println((m.dw'))
     return ε
 end
 
+mean(mdn::MixtureDensityNetwork) = dot(mdn.π, mdn.μ)
 
-function mean(mdn::MixtureDensityNetwork)
-    μ = 0.
-    for i =1:mdn.n
-        μ = mdn.π[i] * mdn.μ[i]
+function sample(mdn::MixtureDensityNetwork)
+    Σπ = 0.
+    r = rand()
+    nDist = 0
+    for i = 1:mdn.n
+        Σπ += mdn.π[i]
+        if Σπ >= r
+            nDist = i
+            break
+        end
     end
-    return μ
+    x = randn() * mdn.σ[nDist] + mdn.μ[nDist]
+    return x
 end
-
 
 function Base.show(io::IO, mdn::MixtureDensityNetwork)
     @printf(io, "Mixture Density Network\n")
