@@ -3,10 +3,10 @@ const sqrt2PiInv = 1 / sqrt(2*π)
 normalpdf(y, μ, σ) =  sqrt2PiInv * exp(-(y-μ)^2 / 2σ^2) /  σ
 
 type MixtureDensityNetwork
-    n::Int     # number of models
+    n::Int                    # number of gaussians
     π::Vector{AbstractFloat}  # model mix coeff
     μ::Vector{AbstractFloat}  # means
-    σ::Vector{AbstractFloat} # variances
+    σ::Vector{AbstractFloat}  # variances
     function MixtureDensityNetwork(n::Int, std::AbstractFloat=0.08)
         new(n, zeros(n), zeros(n), zeros(n))
     end
@@ -51,15 +51,15 @@ function calcGradients!(mdn::MixtureDensityNetwork, m::NNMatrix, y::AbstractFloa
         σ = mdn.σ[i]
         m.dw[i]     =  mdn.π[i] - γ[i]        # ∂ε/∂m.π
         m.dw[i+n]   =  γ[i]*((μ-y)/(σ^2))     # ∂ε/∂m.μ
-#         m.dw[i+n] = γ[i]*((μ-y)/(σ*σ))
         m.dw[i+n*2] = -γ[i]*((y-μ)^2/(σ^2)-1) # dε/∂m.σ
-#         m.dw[i+n*2] = -γ[i]*((y-μ)*(y-μ)/(σ*σ)-1)
     end
 #     println((m.dw'))
     return ε
 end
 
 mean(mdn::MixtureDensityNetwork) = dot(mdn.π, mdn.μ)
+
+expectation(mdn::MixtureDensityNetwork) = mdn.μ[indmax(mdn.π)]
 
 function sample(mdn::MixtureDensityNetwork)
     Σπ = 0.
