@@ -1,5 +1,5 @@
 module RecurrentNN
-import Base.tanh
+import Base.tanh, Base.rand
 
 export Model, RNN, LSTM, GRU, GFLSTM, GFGRU
 export NNMatrix, randNNMat, forwardprop, softmax, Solver, step

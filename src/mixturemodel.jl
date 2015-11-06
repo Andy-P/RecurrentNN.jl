@@ -3,11 +3,11 @@ const sqrt2PiInv = 1 / sqrt(2*π)
 normalpdf(y, μ, σ) =  sqrt2PiInv * exp(-(y-μ)^2 / 2σ^2) /  σ
 
 type MixtureDensityNetwork
-    n::Int                    # number of gaussians
-    π::Vector{AbstractFloat}  # model mix coeff
-    μ::Vector{AbstractFloat}  # means
-    σ::Vector{AbstractFloat}  # variances
-    function MixtureDensityNetwork(n::Int, std::AbstractFloat=0.08)
+    n::Int     # number of gaussians
+    π::Vector  # model mix coeff
+    μ::Vector  # means
+    σ::Vector  # variances
+    function MixtureDensityNetwork(n::Int, std::Float64=0.08)
         new(n, zeros(n), zeros(n), zeros(n))
     end
 end
@@ -28,7 +28,7 @@ function updateCoeff!(mdn::MixtureDensityNetwork, m::NNMatrix)
 end
 
 
-function calcGamma(mdn::MixtureDensityNetwork, y::AbstractFloat)
+function calcGamma(mdn::MixtureDensityNetwork, y)
     n = mdn.n
     γ = zeros(n);
     Σγ  = 0.
@@ -42,7 +42,7 @@ function calcGamma(mdn::MixtureDensityNetwork, y::AbstractFloat)
 end
 
 
-function calcGradients!(mdn::MixtureDensityNetwork, m::NNMatrix, y::AbstractFloat)
+function calcGradients!(mdn::MixtureDensityNetwork, m::NNMatrix, y)
     γ, ε = calcGamma(mdn, y)
     # calc and assign gradients
     n = mdn.n
@@ -57,11 +57,14 @@ function calcGradients!(mdn::MixtureDensityNetwork, m::NNMatrix, y::AbstractFloa
     return ε
 end
 
+# returns the sum of the weighted means
 mean(mdn::MixtureDensityNetwork) = dot(mdn.π, mdn.μ)
 
+# returns the most likely value for the mixture model
 expectation(mdn::MixtureDensityNetwork) = mdn.μ[indmax(mdn.π)]
 
-function sample(mdn::MixtureDensityNetwork)
+# returns a random sample
+function Base.rand(mdn::MixtureDensityNetwork)
     Σπ = 0.
     r = rand()
     nDist = 0
@@ -84,4 +87,3 @@ function Base.show(io::IO, mdn::MixtureDensityNetwork)
     println(io, " * σ:  $(mdn.σ)")
     return
 end
-
