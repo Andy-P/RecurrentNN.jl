@@ -87,3 +87,7 @@ This library draws on the work of [Andrej Karpathy](https://github.com/karpathy)
 
 ## License
 MIT
+
+## Note: This library is no longer supported!
+This library is no longer supported and has only been tested up to 3.x. I suggest using [MXNet.jl](http://dmlc.ml/MXNet.jl/).
+There is a good [example of how to implement an LSTM is MXNet here.](http://dmlc.ml/MXNet.jl/latest/tutorial/char-lstm/) 
